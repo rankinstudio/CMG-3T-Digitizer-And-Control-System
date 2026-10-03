@@ -83,6 +83,33 @@ USArray, [when and where](http://www.usarray.org/public/about/when) and
 history from PASSCAL station metadata (EarthScope FDSN web services) and its
 TOK4 waveforms.
 
+## Skills required
+
+None of it is advanced, but all of it gets used:
+
+- **Through-hole soldering** on a solderable breadboard: 37 parts and about 34
+  insulated jumpers and bus wires across two boards, header strips cut to length, short
+  wires soldered straight into holes. A fine tip and a steady hand; no
+  surface-mount work (the converters come on modules).
+- **A multimeter**: resistance (telling 4.99 k from 10 k 0.1% parts before
+  they go in, cold checks for shorts), DC volts (supply rails, the 2.5 V
+  reference, the 12 V path) and continuity, to buzz out every conductor of the
+  sensor harness. The build document names the mode and range for each step.
+- **Wiring and cabling**: Dupont sockets on the sensor's pins, punching down
+  Cat6 keystone jacks to T568B with a punch-down tool, panel DC jacks.
+- **3D printing**: three parts with no supports. Expect to tune two clearances
+  for your printer (the lid fit and its snap bumps); the fit-test plate checks
+  the wall openings first.
+- **Raspberry Pi and Linux**: flash Raspberry Pi OS, work over SSH, edit
+  `/boot/firmware/cmdline.txt`, set up a Python venv and a systemd service.
+- **Python on a PC**: install packages with pip, run scripts from a terminal,
+  edit a JSON settings file.
+- **Handling the sensor**: it weighs 14 kg and has locked masses. Level it with
+  its feet and bubble, and lock it before it is ever moved.
+
+Tools: soldering iron and solder, flush cutters, wire strippers, multimeter,
+punch-down tool, 3D printer, a small nut driver or pliers for the standoff nuts.
+
 ## Order of work
 
 1. Build and test the ADC board, then the AUX board (build document, stages 1–2).
