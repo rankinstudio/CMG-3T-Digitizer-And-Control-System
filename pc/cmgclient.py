@@ -198,6 +198,9 @@ def sta_lta(y, fs):
 
 plt.style.use('dark_background')
 matplotlib.rcParams['toolbar'] = 'None'
+# free this program's keys from matplotlib's defaults (l = log y-axis, c = back)
+for _k, _key in (('keymap.yscale', 'l'), ('keymap.back', 'c')):
+    matplotlib.rcParams[_k] = [x for x in matplotlib.rcParams[_k] if x != _key]
 # each component's trace, with its spectrogram directly beneath it for those in SPEC
 rows = []
 for c in COMPS:

@@ -3,8 +3,32 @@
 Python 3 with `numpy`, `scipy`, `matplotlib` and `obspy`; `ssh`/`scp` with a key
 to the Pi (`serverIP` in `cmg3t.JSON`, user `david` in `cmgevent.py`).
 
-- `cmgclient.py` (settings `cmg3t.JSON`): Z, N, E traces with spectrograms;
-  `l` cycles short period (0.5–2 Hz), 1–50 s (0.02–1 Hz) and 10–100 s (0.01–0.1 Hz).
+- `cmgclient.py` (settings `cmg3t.JSON`): live Z, N, E traces with spectrograms,
+  in three views:
+
+  | view | band | window | shows |
+  |---|---|---|---|
+  | short period | 0.5–2 Hz | 15 min | local and regional P and S, traffic |
+  | 1–50 s | 0.02–1 Hz | 1 h | the ocean microseism, regional quakes |
+  | 10–100 s | 0.01–0.1 Hz | 1 h | surface waves of distant quakes, below the microseism |
+
+  Options: a host name or address; `--fresh` (ignore the Pi's replay, start
+  empty); `--mp` or `--lp` (start in the 1–50 s or 10–100 s view); `--spec ZNE`
+  (spectrograms for these components; `Z` is the default, `none` for traces only).
+  Keys in the plot window:
+
+  | key | does |
+  |---|---|
+  | `l` | next view: short period → 1–50 s → 10–100 s → short period |
+  | `c` | clear the display and start again from the next block |
+  | `s` | save the window as a PNG |
+  | `f` | full screen on / off |
+  | `g` | grid on / off (axes under the mouse) |
+  | `q` | close |
+
+  Each view's band, window length, decimation and spectrogram settings are in
+  `cmg3t.JSON`: the top level is the short-period view, `midPeriod` and
+  `longPeriod` override it for the other two.
 - `cmgevent.py <usgs id>`: pulls the hours around a catalogued quake from the
   Pi, band-passes Z/N/E in those three bands, and saves the plots under
   `cmg3t/events/<origin>_M<mag>_<place>/` if the quake registered: Z louder,
