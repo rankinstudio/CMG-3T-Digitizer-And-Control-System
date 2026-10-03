@@ -216,6 +216,7 @@ fig.canvas.manager.set_window_title("cmgclient  %s:%s" % (HOST, '/'.join(map(str
 rx = [Receiver(c, p) for c, p in zip(COMPS, PORTS)]
 for r in rx:
     r.start()
+LABEL_OFFSET_IN, LABEL_MARGIN_IN = 0.62, 0.85   # y-label distance from its axis, figure left margin (inches)
 state = {'laid_out': False, 'last_trigger': 0.0, 'view': 'LP' if '--lp' in sys.argv else 'MP' if '--mp' in sys.argv else 'SP'}
 opts.update(VIEWS[state['view']])
 
@@ -338,6 +339,13 @@ def _animate():
     if not state['laid_out']:
         fig.tight_layout(pad=0.3, h_pad=0.2)
         state['laid_out'] = True
+    # y-labels at a fixed distance left of every axis, and a left margin that
+    # fits them plus the widest tick text ("-0.75", "-12.5"), so they never
+    # collide when the tick labels change width
+    w_in = fig.get_size_inches()[0]
+    fig.subplots_adjust(left=LABEL_MARGIN_IN / w_in)
+    for a in axes:
+        a.yaxis.set_label_coords(-LABEL_OFFSET_IN / (a.get_position().width * w_in), 0.5)
 
 
 ani = FuncAnimation(fig, animate, interval=opts['refreshMs'], cache_frame_data=False)
