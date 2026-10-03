@@ -26,6 +26,63 @@ come from it.
 | `enclosure/` | 3D-printed box for the boards with the Pi on its side ([README](enclosure/README.md)) |
 | `pc/` | PC viewer (Z/N/E traces and spectrograms in three bands) and earthquake plots ([README](pc/README.md)) |
 
+## About the sensor
+
+**History.** Güralp Systems, of Reading in England, launched the 3T in the
+mid-1980s: the company dates it to 1985, and it has been in continuous
+production since 1987. It was the first field-worthy three-component broadband
+feedback seismometer, and more than 3000 have been deployed worldwide. It
+became a standard sensor for national seismic networks and for the
+instrument pools that lend seismometers to university experiments, above all
+the US PASSCAL pool, which also bought cold-rated 3Ts for Antarctica. From 2004
+it was one of the three broadband sensors of EarthScope's USArray
+Transportable Array, alongside the Streckeisen STS-2 and the Nanometrics
+Trillium 240: a grid of about 400 stations, 70 km apart, that rolled across
+the lower 48 states from 2004 to 2015 (1679 sites in all), then Alaska and
+western Canada until 2021.
+
+**Retirement.** The Transportable Array closed in 2021 and the pools now field
+newer designs, so many older 3Ts, typically 1990s and 2000s builds, have been
+retired and turn up on the surplus market, usually without their cables. This
+one, serial T35286, is ex-PASSCAL: pier tests at the instrument center in
+Socorro from 2008, deployments in South Carolina (2013–2014) and at Tok in
+interior Alaska (2016–2018, 26 months), and a last pier test in October 2018.
+Its Alaska data, which are public, show all three components healthy at both
+ends of that deployment and the centring motors still working ten weeks before
+it came out.
+
+**Performance.** Force feedback holds the masses still and reads the force
+needed to do it, so one instrument covers the whole seismic band with a single
+transfer function:
+
+| | |
+|---|---|
+| Response | Flat to velocity, 120 s – 50 Hz (360 s and other corners were options) |
+| Sensitivity | 2 × 750 V/(m/s), differential |
+| Clip | ±10 V per side, ±20 V differential: about 13 mm/s |
+| Self-noise | Below the USGS New Low Noise Model from beyond 200 s to 20 Hz (vertical) |
+| Dynamic range | Over 140 dB across the passband; linearity >111 dB vertical, >107 dB horizontal |
+| Mass control | Remote lock, unlock and centre; masses recentre over ±2.5° of tilt |
+| Power | 10–36 V DC, ~62–75 mA at 12 V, more while the motors run |
+
+In practice that range spans the Earth's quietest ground motion at long
+periods, the ocean microseism at 3–20 s, the surface waves of distant
+earthquakes at 20–100 s and more, and local events up to about 13 mm/s. The
+vertical is the quiet component at long period; the horizontals also respond
+to tilt, so in a shallow or thermally unstable vault they sit well above the
+vertical below ~20 s. This digitizer clips at ±4.1 mm/s and its own floor,
+~1.5 nm/s/√Hz, is below the low-noise model from 0.01 to ~0.7 Hz: the band where
+the sensor is quietest.
+
+Sources: Güralp, [About us](https://www.guralp.com/about-us) and
+[CMG-3T datasheet](https://nappe.wustl.edu/SPREE/instrument-other-documentation/from-Guralp/CMG-3T-datasheet.pdf);
+EarthScope Primary Instrument Center, [polar sensors](https://epic.earthscope.org/content/polar/equipment/year-round/sensors)
+and [sensor comparison](https://epic.earthscope.org/content/instrumentation/sensors/sensor-comparison-chart);
+USArray, [when and where](http://www.usarray.org/public/about/when) and
+[the Alaska Transportable Array](http://www.usarray.org/Alaska); the unit's
+history from PASSCAL station metadata (EarthScope FDSN web services) and its
+TOK4 waveforms.
+
 ## Order of work
 
 1. Build and test the ADC board, then the AUX board (build document, stages 1–2).
