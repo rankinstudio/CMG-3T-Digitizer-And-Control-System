@@ -1,0 +1,17 @@
+{
+    "network": "XX",
+    "station": "QUAK",
+    "channelPrefix": "HH",
+    "massPrefix": "LM",
+
+    "zPort": 1244,
+    "nPort": 1245,
+    "ePort": 1246,
+    "blockSec": 1.0,
+    "logDir": "data",
+    "logFormat": "mseed",
+    "logFlushSec": 60,
+    "historySec": 3600,
+    "retainDays": 365,
+    "maxLogGB": 40
+}

@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CMG-3T Digitizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+    /* stand-alone reset */
+    html { color-scheme: light dark; }
+    body { margin: 0; }
+    img { max-width: 100%; }
+    [hidden] { display: none !important; }
+
+  :root {
+    --ground:   #EBEFEE;
+    --surface:  #F7F9F8;
+    --sunken:   #E1E7E5;
+    --ink:      #16211F;
+    --ink-soft: #3D4C49;
+    --muted:    #5B6A67;
+    --rule:     #C6D0CD;
+    --board:    #0E4640;
+    --board-in: #10534B;
+    --silk:     #DCE5E2;
+    --copper:   #B87333;
+    --accent:   #A85A22;
+    --crit:     #96271F;
+    --crit-bg:  #F6E4E1;
+    --chip-bg:  #DFE6E4;
+
+    --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --f-body:    "Public Sans", "Segoe UI", system-ui, sans-serif;
+    --f-mono:    "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0C1312; --surface: #131C1A; --sunken: #1B2624;
+      --ink: #E3EAE8; --ink-soft: #C0CCC9; --muted: #8DA09B; --rule: #2B3937;
+      --board: #0B3E39; --board-in: #0E4A43; --silk: #DCE5E2;
+      --copper: #CE8F4E; --accent: #DC9257;
+      --crit: #E8756B; --crit-bg: #2A1614; --chip-bg: #22302D;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0C1312; --surface: #131C1A; --sunken: #1B2624;
+    --ink: #E3EAE8; --ink-soft: #C0CCC9; --muted: #8DA09B; --rule: #2B3937;
+    --board: #0B3E39; --board-in: #0E4A43; --silk: #DCE5E2;
+    --copper: #CE8F4E; --accent: #DC9257;
+    --crit: #E8756B; --crit-bg: #2A1614; --chip-bg: #22302D;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--f-body);
+         font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .sheet { max-width: 1160px; margin: 0 auto; padding: 28px 24px 72px;
+           display: flex; flex-direction: column; gap: 34px; }
+
+  .titleblock { border: 1.5px solid var(--ink); background: var(--surface);
+                display: grid; grid-template-columns: minmax(230px, 1.3fr) repeat(3, minmax(115px, 1fr)); }
+  .tb-main { padding: 18px 20px; border-right: 1.5px solid var(--ink); }
+  .tb-main h1 { font-family: var(--f-display); font-weight: 700;
+                font-size: clamp(24px, 4vw, 34px); line-height: 1.05;
+                letter-spacing: -0.015em; margin: 0 0 6px; text-wrap: balance; }
+  .tb-main p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+  .tb-field { padding: 12px 14px; border-right: 1px solid var(--rule);
+              display: flex; flex-direction: column; gap: 3px; }
+  .tb-field:last-child { border-right: 0; }
+  .tb-field .k { font-family: var(--f-mono); font-size: 9.5px; font-weight: 600;
+                 letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); }
+  .tb-field .v { font-family: var(--f-mono); font-size: 14px; font-weight: 500;
+                 font-variant-numeric: tabular-nums; }
+  .tb-field .v small { display: block; font-size: 11px; color: var(--muted);
+                       font-weight: 400; letter-spacing: 0; }
+
+  h2 { font-family: var(--f-display); font-weight: 600; font-size: 12px;
+       letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted);
+       margin: 0 0 6px; padding-bottom: 7px; border-bottom: 1px solid var(--rule); }
+  .lede { font-size: 14px; color: var(--muted); margin: 0 0 14px; max-width: 76ch; }
+  p { margin: 0 0 12px; max-width: 68ch; }
+  p:last-child { margin-bottom: 0; }
+  code { font-family: var(--f-mono); font-size: 0.88em; background: var(--sunken);
+         padding: 0.1em 0.34em; border-radius: 2px; }
+
+  figure { margin: 0; }
+  .fig-frame { background: var(--surface); border: 1px solid var(--rule); padding: 14px; }
+  svg.board { display: block; width: 100%; max-width: 100%; height: auto; }
+  figcaption { margin-top: 10px; font-size: 13px; color: var(--muted); max-width: 80ch; }
+
+  .zonekey { list-style: none; margin: 18px 0 0; padding: 0; display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+             gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .zonekey li { background: var(--surface); padding: 12px 14px;
+                display: flex; gap: 11px; align-items: flex-start; }
+  .zonekey .n { font-family: var(--f-mono); font-size: 12px; font-weight: 600;
+                width: 21px; height: 21px; flex: 0 0 21px; display: grid;
+                place-items: center; background: var(--board); color: var(--silk); }
+  .zonekey .t { font-size: 13px; line-height: 1.45; }
+  .zonekey .t b { display: block; font-family: var(--f-display); font-weight: 600;
+                  font-size: 13px; }
+  .zonekey .t span { color: var(--muted); }
+
+  /* ---------- schematic panels ---------- */
+  .schgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)); gap: 16px; }
+  .schcard { background: var(--surface); border: 1px solid var(--rule); padding: 12px 14px 14px; }
+  .schcard h3 { font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+                letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted);
+                margin: 0 0 8px; }
+  .schcard svg { display: block; width: 100%; height: auto; }
+  .schcard p { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; max-width: none; }
+  .sch-wire { stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; }
+  .sch-body { stroke: currentColor; stroke-width: 1.6; fill: var(--surface); }
+  .sch-dot  { fill: currentColor; stroke: none; }
+  .sch-txt  { font-family: var(--f-mono); font-size: 11px; fill: currentColor; stroke: none; }
+  .sch-sym  { font-family: var(--f-mono); font-size: 12px; fill: currentColor; stroke: none; }
+  .sch-pin  { font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+              fill: var(--copper); stroke: none; }
+  .sch-node { font-family: var(--f-mono); font-size: 10.5px; font-weight: 600;
+              fill: var(--accent); stroke: none; }
+
+
+  /* ---------- perfboard layout ---------- */
+  :root { --part-fill: #DCE5E2; --part-ink: #1A2422; --part-mut: #55635F; }
+  .pbwrap { background: var(--surface); border: 1px solid var(--rule); padding: 16px; overflow-x: auto; }
+  svg.pb { display: block; width: 100%; min-width: 620px; max-width: 940px; margin: 0 auto; height: auto; }
+  .pb-board { fill: var(--board); }
+  .pb-mount { fill: var(--ground); stroke: var(--copper); stroke-width: 2; }
+  .pb-hole  { fill: var(--ground); stroke: var(--copper); stroke-width: 1.3; }
+  .pb-lbl   { font-family: var(--f-mono); font-size: 9px; fill: var(--silk); opacity: .65; }
+  .pb-title { font-family: var(--f-display); font-size: 15px; font-weight: 700; fill: currentColor; }
+  .pb-sub   { font-family: var(--f-mono); font-size: 10px; fill: var(--muted); }
+  .pb-wire      { stroke: var(--copper); stroke-width: 2.6; opacity: .8; stroke-linecap: round; fill: none; }
+  .pb-wire-rail { stroke: var(--copper); stroke-width: 2.4; opacity: .4; stroke-linecap: round;
+                  fill: none; stroke-dasharray: 7 5; }
+  .pb-dip  { fill: var(--part-fill); stroke: var(--part-ink); stroke-width: 1.5; }
+  .pb-term { fill: var(--part-fill); stroke: var(--part-ink); stroke-width: 1.8; }
+  .pb-res, .pb-cer { fill: var(--part-fill); stroke: var(--part-ink); stroke-width: 1.3; }
+  .pb-film { fill: var(--part-fill); stroke: var(--part-ink); stroke-width: 1.3; }
+  .pb-elec { fill: var(--part-fill); stroke: var(--part-ink); stroke-width: 1.6; }
+  .ec .pb-dip, .ec .pb-term, .ec .pb-cer, .ec .pb-film, .ec .pb-elec, .ec .pb-res { fill-opacity: .6; }
+.pb-pin1 { fill: var(--copper); }
+  .pb-ref  { font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; fill: var(--part-ink); }
+  .pb-val  { font-family: var(--f-mono); font-size: 9px; fill: var(--part-mut); }
+  .pb-pn   { font-family: var(--f-mono); font-size: 8px; font-weight: 600; fill: var(--copper); }
+  .pb-link { fill: none; stroke: var(--accent); stroke-width: 2.2; }
+  .pb-net  { font-family: var(--f-mono); font-size: 9px; font-weight: 600; fill: var(--accent); }
+  .runs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 18px; }
+  .runcard { background: var(--surface); border: 1px solid var(--rule); }
+  .runcard h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .13em;
+                text-transform: uppercase; color: var(--muted); margin: 0;
+                padding: 11px 14px; border-bottom: 1.5px solid var(--ink); }
+  .runcard table { min-width: 0; }
+  .runcard td.rn { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; width: 1%; }
+  .runcard td.rn.rail { color: var(--accent); }
+  .runcard td.rw { font-family: var(--f-mono); font-size: 12px; color: var(--ink-soft); line-height: 1.9; }
+
+
+  /* ---------- ElectroCookie solderable breadboard ---------- */
+  :root { --ec-pcb: #17191B; --gold: #C9A24A; --ec-silk: #E9EBE7; }
+  svg.ec { display: block; width: 100%; min-width: 700px; height: auto; }
+  .ec-board { fill: var(--ec-pcb); }
+  .ec-chan  { fill: #0C0E10; }
+  .ec-mount { fill: var(--ground); stroke: var(--gold); stroke-width: 2; }
+  .ec-hole, .ec-rail { fill: #0C0E10; stroke: var(--gold); stroke-width: 2.2; }
+  .ec-vp    { fill: #7A2E2E; opacity: .5; }
+  .ec-vn    { fill: #2E4A7A; opacity: .5; }
+  .ec-gnd   { fill: #4A4A4A; opacity: .5; }
+  .ec-raillbl { font-family: var(--f-mono); font-size: 12px; font-weight: 600; fill: currentColor; }
+  .ec-lbl   { font-family: var(--f-mono); font-size: 10.5px; fill: var(--ec-silk); opacity: .6; }
+  .ec-note  { font-family: var(--f-mono); font-size: 9.5px; fill: var(--ec-silk); opacity: .75; }
+  .ec-jmp   { stroke: var(--accent); stroke-width: 2.8; fill: none; stroke-linecap: round;
+              stroke-linejoin: round; opacity: .92; }
+  .ec-jmp2  { stroke: var(--accent); stroke-width: 3.4; fill: none; stroke-linecap: round;
+              stroke-dasharray: 5 4; }
+  .ec-lead  { stroke: var(--part-fill); stroke-width: 2.4; fill: none;
+              opacity: .85; stroke-linecap: round; }
+  .ec-silkmark { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .45; }
+  .ec-silktxt  { font-family: var(--f-mono); font-size: 9.5px; font-weight: 700;
+                 fill: currentColor; opacity: .55; }
+  .ec-wire-in  { fill: #0C0E10; stroke: var(--part-ink); stroke-width: 1.2; }
+  .ec-wire-arr { stroke: var(--ec-silk); stroke-width: 2.2; fill: none;
+                 stroke-linecap: round; stroke-linejoin: round; }
+  .ec-ref   { font-family: var(--f-mono); font-size: 11px; font-weight: 600; fill: var(--part-ink); }
+
+
+  .stage { margin-top: 22px; }
+  .stage > h3 { font-family: var(--f-display); font-weight: 700; font-size: 16px;
+                margin: 0 0 3px; line-height: 1.3; }
+  .stage > h3 .sn { display: block; font-family: var(--f-mono); font-size: 10px;
+                    font-weight: 600; color: var(--accent); letter-spacing: .16em;
+                    text-transform: uppercase; margin-bottom: 3px; }
+  .stage > p.sd { font-size: 13px; color: var(--muted); margin: 0 0 10px; max-width: 74ch; }
+  ol.astep { margin: 0; padding: 0; list-style: none; counter-reset: a;
+             display: flex; flex-direction: column; gap: 1px;
+             background: var(--rule); border: 1px solid var(--rule); }
+  ol.astep li { background: var(--surface); padding: 11px 15px; counter-increment: a;
+                display: grid; grid-template-columns: 24px 1fr; column-gap: 12px;
+                row-gap: 6px; font-size: 13.5px; align-items: start; }
+  ol.astep li > .badge { grid-column: 2; justify-self: start; }
+  ol.astep li > .txt { grid-column: 2; line-height: 1.55; }
+  ol.astep li::before { content: counter(a); font-family: var(--f-mono); font-size: 11.5px;
+                        font-weight: 600; color: var(--muted); padding-top: 2px; }
+  ol.astep li.gate { background: var(--sunken); box-shadow: inset 3px 0 0 var(--copper); }
+  ol.astep li.gate::before { color: var(--copper); }
+  ol.astep li.stop { background: var(--crit-bg); box-shadow: inset 3px 0 0 var(--crit); }
+  ol.astep li.stop::before { color: var(--crit); }
+  ol.astep b { font-family: var(--f-display); font-weight: 600; }
+  ol.astep code { font-size: .85em; }
+  ol.astep .badge { font-family: var(--f-mono); font-size: 9px; font-weight: 600;
+                    letter-spacing: .12em; text-transform: uppercase; padding: 2px 6px;
+                    border-radius: 2px; margin-right: 7px; white-space: nowrap;
+                    background: var(--copper); color: #14161A; }
+  ol.astep .badge.s { background: var(--crit); color: #fff; }
+
+
+  .ec-ondark { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600;
+               fill: var(--ec-silk); stroke: #0A0C0D; stroke-width: 3.4;
+               paint-order: stroke fill; }
+  .ec-onlight { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600;
+                fill: var(--part-ink); stroke: none; }
+  .ec-jnum    { font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+                fill: #14161A; stroke: none; }
+  .ec-jnum-bg { fill: var(--accent); stroke: #0A0C0D; stroke-width: 1.4; }
+
+
+
+  /* ---------- response curve ---------- */
+  :root {
+    --cv-out: #B35A14; --cv-sensor: #0E7FA6;
+    --cv-grid: #D3DBD9; --cv-gridmin: #E6ECEA; --cv-axis: #9FAEAB;
+    --cv-bandfill: #B35A1409; --cv-tipbg: #FFFFFFF2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cv-out: #D07E33; --cv-sensor: #3E9DC4;
+      --cv-grid: #2A3836; --cv-gridmin: #1E2A28; --cv-axis: #556864;
+      --cv-bandfill: #D07E3309; --cv-tipbg: #0D1413F2;
+    }
+  }
+  :root[data-theme="dark"] {
+    --cv-out: #D07E33; --cv-sensor: #3E9DC4;
+    --cv-grid: #2A3836; --cv-gridmin: #1E2A28; --cv-axis: #556864;
+    --cv-bandfill: #D07E3309; --cv-tipbg: #0D1413F2;
+  }
+  svg.cv { display: block; width: 100%; min-width: 560px; height: auto; }
+  #cvSurface { cursor: crosshair; }
+  .cv-band     { fill: var(--cv-bandfill); }
+  .cv-grid     { stroke: var(--cv-grid); stroke-width: 1; }
+  .cv-grid-min { stroke: var(--cv-gridmin); stroke-width: 1; }
+  .cv-axis     { stroke: var(--cv-axis); stroke-width: 1.2; }
+  .cv-ref      { stroke: var(--cv-axis); stroke-width: 1; stroke-dasharray: 5 4; }
+  .cv-reflab   { font-family: var(--f-mono); font-size: 10px; fill: var(--muted); }
+  .cv-tick     { font-family: var(--f-mono); font-size: 11px; fill: var(--muted);
+                 font-variant-numeric: tabular-nums; }
+  .cv-axlab    { font-family: var(--f-body); font-size: 12px; fill: var(--muted); }
+  .cv-sensor   { fill: none; stroke: var(--cv-sensor); stroke-width: 2;
+                 stroke-linejoin: round; stroke-linecap: round; }
+  .cv-out      { fill: none; stroke: var(--cv-out); stroke-width: 2.4;
+                 stroke-linejoin: round; stroke-linecap: round; }
+  .cv-lab-out    { font-family: var(--f-display); font-size: 12px; font-weight: 600;
+                   fill: var(--cv-out); }
+  .cv-lab-sensor { font-family: var(--f-display); font-size: 12px; font-weight: 600;
+                   fill: var(--cv-sensor); }
+  .cv-dot      { fill: var(--surface); stroke: var(--cv-out); stroke-width: 2; }
+  .cv-dot2     { fill: var(--surface); stroke: var(--cv-sensor); stroke-width: 2; }
+  .cv-note     { font-family: var(--f-mono); font-size: 10.5px; fill: var(--ink-soft); }
+  .cv-cross    { stroke: var(--cv-axis); stroke-width: 1; stroke-dasharray: 3 3; }
+  .cv-hit      { fill: var(--cv-out); stroke: var(--surface); stroke-width: 2; }
+  .cv-hit2     { fill: var(--cv-sensor); stroke: var(--surface); stroke-width: 2; }
+  .cv-tipbg    { fill: var(--cv-tipbg); stroke: var(--rule); stroke-width: 1; }
+  .cv-tip      { font-family: var(--f-mono); font-size: 11px; font-weight: 600; fill: var(--ink); }
+  .cv-tip2     { font-family: var(--f-mono); font-size: 11px; fill: var(--cv-out); }
+  .cv-tip3     { font-family: var(--f-mono); font-size: 11px; fill: var(--cv-sensor); }
+  .cv-legend   { display: flex; flex-wrap: wrap; gap: 18px; margin: 10px 0 0;
+                 font-size: 12.5px; color: var(--ink-soft); }
+  .cv-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .cv-legend i    { width: 15px; height: 2.5px; border-radius: 2px; display: inline-block; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  table.nets { min-width: 700px; }
+  table.bom { min-width: 760px; }
+  thead th { text-align: left; font-family: var(--f-mono); font-size: 9.5px;
+             font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase;
+             color: var(--muted); padding: 10px 14px;
+             border-bottom: 1.5px solid var(--ink); white-space: nowrap; }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.ref, td.val { font-family: var(--f-mono); font-weight: 500; white-space: nowrap;
+                   font-variant-numeric: tabular-nums; }
+  td.val { color: var(--accent); }
+  td.pkg { color: var(--ink-soft); }
+  td.note { color: var(--muted); min-width: 210px; }
+  tbody tr.keypart td.ref { box-shadow: inset 3px 0 0 var(--copper); }
+  .flag { font-family: var(--f-mono); font-size: 9.5px; font-weight: 600;
+          letter-spacing: 0.09em; text-transform: uppercase; color: var(--crit);
+          white-space: nowrap; }
+
+  td.netname { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+  td.netname.rail { color: var(--accent); }
+  td.pins { line-height: 2.1; }
+  .pin { font-family: var(--f-mono); font-size: 12px; font-weight: 500;
+         background: var(--chip-bg); border: 1px solid var(--rule);
+         padding: 2px 6px; margin-right: 4px; white-space: nowrap; border-radius: 2px; }
+  .pin.ic { border-color: var(--copper); box-shadow: inset 2px 0 0 var(--copper); }
+  .pin.conn { border-style: dashed; }
+  td.cnt { font-family: var(--f-mono); color: var(--muted); text-align: right;
+           font-variant-numeric: tabular-nums; }
+  .tfoot-note { font-size: 12.5px; color: var(--muted); margin-top: 9px; max-width: 80ch; }
+
+  .notes { display: flex; flex-direction: column; gap: 1px;
+           background: var(--rule); border: 1px solid var(--rule); }
+  .note-row { background: var(--surface); padding: 14px 16px;
+              display: grid; grid-template-columns: 26px 1fr; gap: 12px; }
+  .note-row.critical { background: var(--crit-bg); box-shadow: inset 3px 0 0 var(--crit); }
+  .note-row .idx { font-family: var(--f-mono); font-size: 12px; font-weight: 600;
+                   color: var(--muted); padding-top: 2px; }
+  .note-row.critical .idx { color: var(--crit); }
+  .note-row h3 { font-family: var(--f-display); font-weight: 600; font-size: 14.5px;
+                 margin: 0 0 4px; display: flex; flex-wrap: wrap; gap: 9px; align-items: baseline; }
+  .note-row p { font-size: 13.5px; color: var(--ink-soft); margin: 0; max-width: 74ch; }
+
+  ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s;
+             display: flex; flex-direction: column; gap: 1px;
+             background: var(--rule); border: 1px solid var(--rule); }
+  ol.steps li { background: var(--surface); padding: 12px 16px; counter-increment: s;
+                display: grid; grid-template-columns: 26px 1fr; gap: 12px; font-size: 13.5px; }
+  ol.steps li::before { content: counter(s); font-family: var(--f-mono); font-size: 12px;
+                        font-weight: 600; color: var(--muted); }
+  ol.steps li.check { background: var(--sunken); }
+  ol.steps b { font-family: var(--f-display); font-weight: 600; }
+
+  .gap { border: 1px solid var(--rule); border-left: 3px solid var(--copper);
+         background: var(--surface); padding: 16px 18px; }
+  .gap h3 { font-family: var(--f-display); font-weight: 600; font-size: 15px; margin: 0 0 6px; }
+  .gap p { font-size: 13.5px; color: var(--ink-soft); }
+
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  @media (max-width: 720px) {
+    .titleblock { grid-template-columns: 1fr 1fr; }
+    .tb-main { grid-column: 1 / -1; border-right: 0; border-bottom: 1.5px solid var(--ink); }
+    .tb-field:nth-child(3) { border-right: 0; }
+  }
+  /* ---------- Raspberry Pi interface ---------- */
+  table.regs { min-width: 640px; }
+  table.pins { min-width: 560px; }
+  td.hex { font-family: var(--f-mono); font-weight: 600; color: var(--accent);
+           white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.bits { font-family: var(--f-mono); font-size: 12px; color: var(--ink-soft);
+            white-space: nowrap; }
+  .pi-fig { display: block; width: 100%; height: auto; }
+  .pi-wire   { fill: none; stroke: var(--ink); stroke-width: 1.6; }
+  .pi-rail   { fill: none; stroke: var(--accent); stroke-width: 1.9; }
+  .pi-res    { fill: var(--sunken); stroke: var(--ink); stroke-width: 1.5; }
+  .pi-box    { fill: var(--sunken); stroke: var(--ink); stroke-width: 1.6; }
+  .pi-term   { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; }
+  .pi-node   { fill: var(--ink); }
+  .pi-name   { font-family: var(--f-display); font-size: 13px; font-weight: 700;
+               fill: var(--ink); }
+  .pi-lbl    { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600;
+               fill: var(--ink); }
+  .pi-val    { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600;
+               fill: var(--accent); }
+  .pi-note   { font-family: var(--f-body); font-size: 11.5px; fill: var(--muted); }
+  .pi-cap    { font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+               letter-spacing: .13em; text-transform: uppercase; fill: var(--muted); }
+
+  table.order { min-width: 720px; }
+  table.order td.qty { font-family: var(--f-mono); text-align: right; color: var(--muted);
+                       font-variant-numeric: tabular-nums; width: 1%; }
+  table.order td.mpn { font-family: var(--f-mono); font-weight: 600; color: var(--accent);
+                       white-space: nowrap; }
+  table.order td.dk  { font-family: var(--f-mono); font-size: 12px; color: var(--ink-soft);
+                       white-space: nowrap; }
+  table.order tbody tr.grp td { background: var(--sunken); font-family: var(--f-mono);
+                                font-size: 9.5px; font-weight: 600; letter-spacing: .13em;
+                                text-transform: uppercase; color: var(--muted); }
+
+
+  .ec-vr    { fill: #2E6A4A; opacity: .5; }
+  .ec-off   { fill: #4A4A4A; opacity: .18; }
+  .ec-ext   { stroke: var(--ec-wire, #7FB3D5); stroke-width: 2.4; fill: none; stroke-linecap: round; opacity: .9; }
+  .ec-extdot{ fill: var(--ec-wire, #7FB3D5); }
+  .ec-tag   { font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; fill: var(--ink); }
+  .ec-nosock{ fill: none; stroke: var(--crit); stroke-width: 2; stroke-dasharray: 3 2; }
+  .pb-band  { fill: var(--part-ink); }
+  .ec-raillbl { fill: var(--ec-silk); }
+
+  /* ADC board SPI bus wires (rows G/H, under the modules) */
+  .ec-bus   { fill: none; stroke-width: 2.6; stroke-linecap: round; }
+  .ec-busdot{ stroke: none; }
+  path.ec-bus-sclk { stroke: #3F88C5; }  circle.ec-bus-sclk { fill: #3F88C5; }
+  path.ec-bus-mosi { stroke: #3A9A5B; }  circle.ec-bus-mosi { fill: #3A9A5B; }
+  path.ec-bus-miso { stroke: #B5579E; }  circle.ec-bus-miso { fill: #B5579E; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="titleblock">
+    <div class="tb-main">
+      <h1>CMG-3T Digitizer</h1>
+      <p>Three-component digitizer for a G&uuml;ralp CMG-3T 120 s broadband (T35286): three ADS1220s for velocity, an ADS1115 for mass positions, on a Raspberry Pi. Two ElectroCookie solderable breadboards in a 3D-printed box. Drawings, tables and test steps; the software is in <code>pi/</code> and <code>pc/</code>.</p>
+    </div>
+    <div class="tb-field"><span class="k">Sensitivity</span><span class="v">499 V/(m/s)<small>at the ADC &#183; 0.489 nm/s per count</small></span></div>
+    <div class="tb-field"><span class="k">Full scale</span><span class="v">&#177;4.1 mm/s<small>sensor clips at 13 mm/s</small></span></div>
+    <div class="tb-field"><span class="k">Build</span><span class="v">2 boards<small>23 + 14 parts &#183; 13 + 13 jumpers</small></span></div>
+  </header>
+
+  <section>
+    <h2>Overview</h2>
+    <p class="lede">The sensor already delivers flat velocity from 120 s to 50 Hz on low-impedance differential outputs, so there is no preamp: each component gets a matched divider onto a 1.668 V pedestal and its own ADS1220. All three converters share the Pi&rsquo;s SPI bus.</p>
+    <div class="fig-frame"><svg class="pi-fig" viewBox="0 90 1080 310" role="img" aria-label="Block diagram. The CMG-3T's 26-pin plug fans out: the three velocity pairs go to the ADC board, which holds three ADS1220 converters and the 2.5 volt reference and talks to the Pi over SPI. The three mass-position lines go to the AUX board's ADS1115, on I2C. The 12 volt adapter feeds the sensor through the AUX board's diode. Three panel buttons short the lock, unlock and centre lines to logic ground.">
+  <rect class="pi-box" x="20" y="120" width="170" height="140" rx="4"/>
+  <text class="pi-name" x="105" y="150" text-anchor="middle">CMG-3T</text>
+  <text class="pi-lbl" x="105" y="172" text-anchor="middle">T35286</text>
+  <text class="pi-note" x="105" y="196" text-anchor="middle">26-pin plug</text>
+  <text class="pi-note" x="105" y="214" text-anchor="middle">16 of 26 pins used</text>
+  <text class="pi-note" x="105" y="232" text-anchor="middle">Dupont &#8594; 2 &#215; Ethernet + power</text>
+
+  <path class="pi-wire" d="M190 150 H330"/><text class="pi-lbl" x="200" y="142">A&#8211;F  velocity &#177; &#215;3</text>
+  <path class="pi-wire" d="M190 185 H330"/><text class="pi-lbl" x="200" y="178">N  signal gnd</text>
+  <path class="pi-wire" d="M190 215 H290 V290 H330"/><text class="pi-lbl" x="200" y="208">G J L  mass</text>
+  <path class="pi-rail" d="M190 245 H270 V335 H330"/><text class="pi-lbl" x="200" y="238">b c  12 V</text>
+  <path class="pi-wire" d="M105 260 V360 H330"/><text class="pi-lbl" x="112" y="300">U W X Y</text>
+  <rect class="pi-term" x="150" y="345" width="118" height="30" rx="3"/>
+  <text class="pi-lbl" x="209" y="365" text-anchor="middle">3 panel buttons</text>
+
+  <rect class="pi-box" x="330" y="100" width="300" height="110" rx="4"/>
+  <text class="pi-name" x="480" y="126" text-anchor="middle">ADC board</text>
+  <text class="pi-note" x="480" y="148" text-anchor="middle">3 &#215; ADS1220 (Z, N, E) &#183; 0.1% dividers</text>
+  <text class="pi-note" x="480" y="166" text-anchor="middle">LM4040 2.5 V reference &#8594; VREF</text>
+  <text class="pi-val" x="480" y="192" text-anchor="middle">499 V/(m/s) at the ADC</text>
+
+  <rect class="pi-box" x="330" y="262" width="300" height="112" rx="4"/>
+  <text class="pi-name" x="480" y="288" text-anchor="middle">AUX board</text>
+  <text class="pi-note" x="480" y="310" text-anchor="middle">ADS1115: mass positions &#177;8.6 V</text>
+  <text class="pi-note" x="480" y="328" text-anchor="middle">3 &#215; LTV-817: lock / unlock / centre</text>
+  <text class="pi-note" x="480" y="346" text-anchor="middle">12 V island: 1N5819 &#8594; sensor</text>
+  <path class="pi-rail" d="M480 210 V262"/><text class="pi-val" x="490" y="242">VREF</text>
+  <path class="pi-rail" d="M600 374 V396"/><text class="pi-note" x="610" y="388">12 V 1 A adapter &#8594; A13 / A14</text>
+
+  <rect class="pi-box" x="800" y="150" width="240" height="150" rx="4"/>
+  <text class="pi-name" x="920" y="178" text-anchor="middle">Raspberry Pi</text>
+  <text class="pi-note" x="920" y="200" text-anchor="middle">SPI0 shared, CS + DRDY &#215;3</text>
+  <text class="pi-note" x="920" y="218" text-anchor="middle">I&#178;C1 for the ADS1115 &#183; 3 GPIO out</text>
+  <text class="pi-note" x="920" y="236" text-anchor="middle">3V3 &#183; 5V &#183; GND</text>
+  <path class="pi-wire" d="M630 150 H720 V190 H800"/><text class="pi-lbl" x="646" y="142">SPI &#183; 9 GPIO</text>
+  <path class="pi-wire" d="M630 310 H720 V260 H800"/><text class="pi-lbl" x="646" y="302">I&#178;C + 3 GPIO</text>
+</svg></div>
+    <div class="tablewrap" style="margin-top:18px">
+      <table class="regs"><tbody>
+        <tr><td class="pkg">Sensor</td><td class="hex">1500 V/(m/s)</td><td class="note">2 &#215; 750, differential &#183; 120 s &#8211; 50 Hz flat</td></tr>
+        <tr><td class="pkg">Divider gain</td><td class="hex">0.3329</td><td class="note">4.99 k / (4.99 k + 10 k), both legs &#183; common mode 1.668 V</td></tr>
+        <tr class="keypart"><td class="pkg">At the ADC</td><td class="hex">499 V/(m/s)</td><td class="note">Gain 1, PGA bypassed, internal 2.048 V reference</td></tr>
+        <tr class="keypart"><td class="pkg">One count</td><td class="hex">0.489 nm/s</td><td class="note">244.1 nV / 499 V/(m/s)</td></tr>
+        <tr><td class="pkg">Full scale</td><td class="hex">&#177;4.1 mm/s</td><td class="note">Deliberately below the sensor&rsquo;s clip; the noise floor matters more</td></tr>
+        <tr><td class="pkg">Floor, expected</td><td class="hex">~1.5 nm/s/&#8730;Hz</td><td class="note">Measured with the inputs shorted inside the ADS1220, turbo mode, 0.5&ndash;5 Hz</td></tr>
+        <tr><td class="pkg">Rate</td><td class="hex">150 SPS</td><td class="note">Single-shot turbo conversions (5.5 ms), all three started together on a UTC grid, resampled to 100 SPS logged. Turbo is ~5&#215; quieter than normal mode at the same rate</td></tr>
+        <tr><td class="pkg">Mass positions</td><td class="hex">&#177;8.6 V</td><td class="note">ADS1115 via 90.9 k / 10 k to VREF: V<sub>mass</sub> = (V<sub>in</sub> &#8722; 0.9009 V<sub>REF</sub>) / 0.0991, with V<sub>REF</sub> read on A3 every time (the LM4040 is 1%: assuming 2.50 V would put the mass readings up to 0.36 V off)</td></tr>
+      </tbody></table>
+    </div>
+  </section>
+
+  <section id="parts">
+    <h2>Parts</h2>
+    <p class="lede">Every part, grouped by where it goes. Qty is what the board uses; &ldquo;of N&rdquo; is what was bought. A blank DigiKey cell means DigiKey doesn&rsquo;t sell it.</p>
+    <div class="tablewrap"><table class="order">
+      <thead><tr><th>Part</th><th>Maker</th><th>DigiKey</th><th>Qty</th><th>Refs</th><th>Notes</th></tr></thead>
+      <tbody><tr class="grp"><td colspan="6">ADC board</td></tr>
+<tr><td class="mpn">ADS1220 module</td><td class="pkg">generic</td><td class="dk"></td><td class="qty">3 (+1)</td><td class="ref">ADCZ, ADCN, ADCE</td><td class="note">Purple 16-pin module. Not stocked by DigiKey. Meter each: AVDD&ndash;DVDD ~0 &#937;, CLK&ndash;DGND ~10 k&#937;</td></tr>
+<tr><td class="mpn">YR1B4K99CC</td><td class="pkg">TE</td><td class="dk">1712-YR1B4K99CCCT-ND</td><td class="qty">6 (of 8)</td><td class="ref">RaZ, RapZ, RaN, RapN, RaE, RapE</td><td class="note">4.99 k&#937; 0.1%. Across the GND rail to VREF</td></tr>
+<tr><td class="mpn">MFP-25BRD52-10K</td><td class="pkg">Yageo</td><td class="dk">10KADCT-ND</td><td class="qty">6 (of 8)</td><td class="ref">RbZ, RbpZ, RbN, RbpN, RbE, RbpE</td><td class="note">10 k&#937; 0.1%. Looks like the 4.99k: <b>meter before soldering</b></td></tr>
+<tr><td class="mpn">B32529C0104J000</td><td class="pkg">TDK</td><td class="dk">495-1103-ND</td><td class="qty">3</td><td class="ref">CdifZ, CdifN, CdifE</td><td class="note">100 nF film. Flat under each module, fitted before the sockets</td></tr>
+<tr><td class="mpn">LM4040DIZ-2.5/NOPB</td><td class="pkg">TI</td><td class="dk">LM4040DIZ-2.5/NOPB-ND</td><td class="qty">1</td><td class="ref">VR1</td><td class="note">2.5 V shunt reference, TO-92, H27&ndash;H29</td></tr>
+<tr><td class="mpn">MFR-25FRF52-2K87</td><td class="pkg">Yageo</td><td class="dk">13-MFR-25FRF52-2K87CT-ND</td><td class="qty">2</td><td class="ref">Rfd1, Rfd2</td><td class="note">2.87 k&#937; 1%, in parallel, Pi 5 V to VREF</td></tr>
+<tr><td class="mpn">C320C104K5R5TA</td><td class="pkg">KEMET</td><td class="dk">399-4264-ND</td><td class="qty">2</td><td class="ref">Cref, Cd</td><td class="note">100 nF X7R ceramic. VREF rail and 3V3 rail decoupling</td></tr>
+<tr><td class="mpn">PPTC081LFBN-RC</td><td class="pkg">Sullins</td><td class="dk">S7006-ND</td><td class="qty">3</td><td class="ref">Module sockets</td><td class="note">8-pin female header. Each module takes one whole 8-pin strip plus a 6-pin and a 1-pin piece; cut through a contact</td></tr>
+<tr><td class="mpn">ElectroCookie solderable breadboard</td><td class="pkg">ElectroCookie</td><td class="dk"></td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note">Not DigiKey</td></tr>
+<tr class="grp"><td colspan="6">AUX board</td></tr>
+<tr><td class="mpn">ADS1115 breakout, 10-pin</td><td class="pkg">generic</td><td class="dk"></td><td class="qty">1</td><td class="ref">U1</td><td class="note">Mass positions. Blue board, single row VDD&#8230;A3; stands upright in D3&#8211;D12. Not DigiKey. Check the chip reads BOGI (BRPI = ADS1015). Some cheap boards carry fake chips: at PGA &#177;2.048 V a 2.47 V input must read 32767</td></tr>
+<tr><td class="mpn">MFR-25FBF52-90K9</td><td class="pkg">Yageo</td><td class="dk">90.9KXBK-ND</td><td class="qty">3 (of 5)</td><td class="ref">RmZ, RmN, RmE</td><td class="note">90.9 k&#937; 1%. Mass-position divider, top leg</td></tr>
+<tr><td class="mpn">MFR-25FBF52-10K</td><td class="pkg">Yageo</td><td class="dk">10.0KXBK-ND</td><td class="qty">3 (of 5)</td><td class="ref">RrZ, RrN, RrE</td><td class="note">10 k&#937; 1%. Divider bottom leg to VREF. Keep apart from the 0.1% 10k</td></tr>
+<tr><td class="mpn">MFR-25FBF52-1K</td><td class="pkg">Yageo</td><td class="dk">1.00KXBK-ND</td><td class="qty">3 (of 5)</td><td class="ref">Rk1&ndash;Rk3</td><td class="note">1 k&#937; 1%. Optocoupler LED resistors</td></tr>
+<tr><td class="mpn">LTV-817</td><td class="pkg">Lite-On</td><td class="dk">160-1366-5-ND</td><td class="qty">3 (of 4)</td><td class="ref">OK1&ndash;OK3</td><td class="note">Optocoupler, DIP-4. Pin-1 dot top right, in row F</td></tr>
+<tr><td class="mpn">1N5819</td><td class="pkg">onsemi or any</td><td class="dk">1N5819FSCT-ND</td><td class="qty">1 (of 2)</td><td class="ref">D1</td><td class="note">Schottky, 12 V reverse-polarity guard. C13&#8594;C17, band toward 17</td></tr>
+<tr><td class="mpn">ElectroCookie solderable breadboard</td><td class="pkg">ElectroCookie</td><td class="dk"></td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note">Not DigiKey</td></tr>
+<tr class="grp"><td colspan="6">Box, cables and Pi</td></tr>
+<tr><td class="mpn">Panel-mount DC jack, 5.5 / 2.1 mm</td><td class="pkg"></td><td class="dk"></td><td class="qty">2</td><td class="ref">&#8212;</td><td class="note">VIN: 12 V adapter in, to AUX A13 (+) / A14 (&#8722;). VOUT: the sensor power lead, from AUX A17 (+) / A16 (&#8722;)</td></tr>
+<tr><td class="mpn">DC plug, 5.5 / 2.1 mm</td><td class="pkg"></td><td class="dk"></td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note">On the box end of the sensor power lead, for VOUT</td></tr>
+<tr><td class="mpn">Momentary pushbutton, NO, panel mount, 7 mm</td><td class="pkg"></td><td class="dk"></td><td class="qty">3</td><td class="ref">&#8212;</td><td class="note">LOCK / UNLOCK / CENTRE in the box&rsquo;s front wall, in parallel with OK1&ndash;OK3</td></tr>
+<tr><td class="mpn">Cat6 keystone jack, punch-down</td><td class="pkg"></td><td class="dk"></td><td class="qty">2</td><td class="ref">&#8212;</td><td class="note">Box front wall, two colours; wired T568B</td></tr>
+<tr><td class="mpn">Ethernet patch cable, stranded, 3 m</td><td class="pkg"></td><td class="dk"></td><td class="qty">2</td><td class="ref">&#8212;</td><td class="note">SIG and CTL, two colours. Not solid-core</td></tr>
+<tr><td class="mpn">Two-core lead, ~20 AWG, 3 m</td><td class="pkg"></td><td class="dk"></td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note">Sensor power: red to pin c, black to pin b</td></tr>
+<tr><td class="mpn">Dupont female-to-bare leads</td><td class="pkg"></td><td class="dk"></td><td class="qty">~30</td><td class="ref">&#8212;</td><td class="note">Pi harness (19 Pi pins) and the sensor-pin ends</td></tr>
+<tr><td class="mpn">Standoffs ~25 mm, with screws</td><td class="pkg"></td><td class="dk"></td><td class="qty">4</td><td class="ref">&#8212;</td><td class="note">ADC above AUX</td></tr>
+<tr><td class="mpn">M2 hex standoffs, male&ndash;female, 4 mm stud, with nuts</td><td class="pkg"></td><td class="dk"></td><td class="qty">8</td><td class="ref">&#8212;</td><td class="note">Four under the board stack, studs through the box floor; four for the Pi on the box&rsquo;s side wall. Nuts 6 mm across flats</td></tr>
+<tr><td class="mpn">3D-printed box: base, lid</td><td class="pkg"></td><td class="dk"></td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note"><code>enclosure/</code>: STLs and the script that makes them. Print <code>fit_test.stl</code> first</td></tr>
+<tr><td class="mpn">Raspberry Pi 5, 4 GB</td><td class="pkg">Raspberry Pi</td><td class="dk"></td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note">Dedicated to this station; mounts outside the box on its right wall</td></tr>
+<tr><td class="mpn">Pi 5 27 W USB-C supply, active cooler, 32 GB microSD, right-angle USB-C adapter</td><td class="pkg">Raspberry Pi</td><td class="dk"></td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note">The USB-C port faces down, 12 mm above the table</td></tr>
+<tr class="grp"><td colspan="6">Optional: a real plug, if the Dupont sockets ever give intermittents</td></tr>
+<tr><td class="mpn">PT06E-16-26S(SR)</td><td class="pkg">Amphenol</td><td class="dk">PT06E-16-26S(SR)-ND</td><td class="qty">1</td><td class="ref">&#8212;</td><td class="note">Mating plug, solder cup. A MS3116F16-26S clone also works; no W/X/Y/Z suffix</td></tr>
+<tr><td class="mpn">0319-1-15-15-18-27-04-0</td><td class="pkg">Mill-Max</td><td class="dk">ED1284-ND</td><td class="qty">17</td><td class="ref">&#8212;</td><td class="note">For a 3D-printed plug: socket contact for the 1.016 mm sensor pins, solder tail</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section id="adc">
+    <h2>ADC board</h2>
+    <p class="lede">The upper of the two stacked boards. Rails top to bottom: <b>3V3, GND, GND, VREF</b>. Z, N and E modules at columns 1&#8211;8, 10&#8211;17 and 19&#8211;26, each with its divider in the lower bank; the LM4040 at columns 27&#8211;29. Sensor leads land from the bottom edge, Pi wires from the top.</p>
+    <figure class="fig-frame" style="margin:0">
+      <svg class="ec" viewBox="-46 -165 991 813" role="img" aria-label="ADC board layout on a solderable breadboard. Three ADS1220 modules straddle the centre channel at columns 1 to 8, 10 to 17 and 19 to 26, for the vertical, north and east components. Each module has its divider in the lower bank: the sensor minus lead lands in the unsocketed AVDD column and a 10k resistor carries it to AIN1, the plus lead lands in the column right of the module and a 10k resistor carries it to AIN0, two 4.99k resistors lie across the ground rail to the 2.5 volt reference rail at the bottom, and a 100 nF film capacitor lies flat under the module across AIN0 and AIN1. The LM4040 reference sits at columns 27 to 29 in the upper bank, fed from the Pi 5 volt pin through two 2.87k resistors in parallel. Pi wires land in row J along the top edge.">
+<rect class="ec-board" x="0" y="0" width="840" height="502" rx="15"/>
+<rect class="ec-chan" x="34" y="224" width="772" height="54" rx="4"/>
+<circle class="ec-mount" cx="26" cy="26" r="8"/>
+<circle class="ec-mount" cx="814" cy="26" r="8"/>
+<circle class="ec-mount" cx="26" cy="476" r="8"/>
+<circle class="ec-mount" cx="814" cy="476" r="8"/>
+<rect class="ec-vp" x="58" y="34" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="51" text-anchor="end">3V3</text>
+<rect class="ec-gnd" x="58" y="62" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="79" text-anchor="end">GND</text>
+<rect class="ec-gnd" x="58" y="416" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="433" text-anchor="end">GND</text>
+<rect class="ec-vr" x="58" y="444" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="461" text-anchor="end">VREF</text>
+<circle class="ec-rail" cx="72" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="72" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="74" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="386" r="6.6"/>
+<circle class="ec-rail" cx="72" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="72" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="456" r="6.6"/>
+<text class="ec-lbl" x="48" y="390" text-anchor="end">A</text>
+<text class="ec-lbl" x="792" y="390" text-anchor="start">A</text>
+<text class="ec-lbl" x="48" y="366" text-anchor="end">B</text>
+<text class="ec-lbl" x="792" y="366" text-anchor="start">B</text>
+<text class="ec-lbl" x="48" y="342" text-anchor="end">C</text>
+<text class="ec-lbl" x="792" y="342" text-anchor="start">C</text>
+<text class="ec-lbl" x="48" y="318" text-anchor="end">D</text>
+<text class="ec-lbl" x="792" y="318" text-anchor="start">D</text>
+<text class="ec-lbl" x="48" y="294" text-anchor="end">E</text>
+<text class="ec-lbl" x="792" y="294" text-anchor="start">E</text>
+<text class="ec-lbl" x="48" y="216" text-anchor="end">F</text>
+<text class="ec-lbl" x="792" y="216" text-anchor="start">F</text>
+<text class="ec-lbl" x="48" y="192" text-anchor="end">G</text>
+<text class="ec-lbl" x="792" y="192" text-anchor="start">G</text>
+<text class="ec-lbl" x="48" y="168" text-anchor="end">H</text>
+<text class="ec-lbl" x="792" y="168" text-anchor="start">H</text>
+<text class="ec-lbl" x="48" y="144" text-anchor="end">I</text>
+<text class="ec-lbl" x="792" y="144" text-anchor="start">I</text>
+<text class="ec-lbl" x="48" y="120" text-anchor="end">J</text>
+<text class="ec-lbl" x="792" y="120" text-anchor="start">J</text>
+<text class="ec-lbl" x="72" y="100" text-anchor="middle">1</text>
+<text class="ec-lbl" x="72" y="406" text-anchor="middle">1</text>
+<text class="ec-lbl" x="96" y="100" text-anchor="middle">2</text>
+<text class="ec-lbl" x="96" y="406" text-anchor="middle">2</text>
+<text class="ec-lbl" x="120" y="100" text-anchor="middle">3</text>
+<text class="ec-lbl" x="120" y="406" text-anchor="middle">3</text>
+<text class="ec-lbl" x="144" y="100" text-anchor="middle">4</text>
+<text class="ec-lbl" x="144" y="406" text-anchor="middle">4</text>
+<text class="ec-lbl" x="168" y="100" text-anchor="middle">5</text>
+<text class="ec-lbl" x="168" y="406" text-anchor="middle">5</text>
+<text class="ec-lbl" x="192" y="100" text-anchor="middle">6</text>
+<text class="ec-lbl" x="192" y="406" text-anchor="middle">6</text>
+<text class="ec-lbl" x="216" y="100" text-anchor="middle">7</text>
+<text class="ec-lbl" x="216" y="406" text-anchor="middle">7</text>
+<text class="ec-lbl" x="240" y="100" text-anchor="middle">8</text>
+<text class="ec-lbl" x="240" y="406" text-anchor="middle">8</text>
+<text class="ec-lbl" x="264" y="100" text-anchor="middle">9</text>
+<text class="ec-lbl" x="264" y="406" text-anchor="middle">9</text>
+<text class="ec-lbl" x="288" y="100" text-anchor="middle">10</text>
+<text class="ec-lbl" x="288" y="406" text-anchor="middle">10</text>
+<text class="ec-lbl" x="312" y="100" text-anchor="middle">11</text>
+<text class="ec-lbl" x="312" y="406" text-anchor="middle">11</text>
+<text class="ec-lbl" x="336" y="100" text-anchor="middle">12</text>
+<text class="ec-lbl" x="336" y="406" text-anchor="middle">12</text>
+<text class="ec-lbl" x="360" y="100" text-anchor="middle">13</text>
+<text class="ec-lbl" x="360" y="406" text-anchor="middle">13</text>
+<text class="ec-lbl" x="384" y="100" text-anchor="middle">14</text>
+<text class="ec-lbl" x="384" y="406" text-anchor="middle">14</text>
+<text class="ec-lbl" x="408" y="100" text-anchor="middle">15</text>
+<text class="ec-lbl" x="408" y="406" text-anchor="middle">15</text>
+<text class="ec-lbl" x="432" y="100" text-anchor="middle">16</text>
+<text class="ec-lbl" x="432" y="406" text-anchor="middle">16</text>
+<text class="ec-lbl" x="456" y="100" text-anchor="middle">17</text>
+<text class="ec-lbl" x="456" y="406" text-anchor="middle">17</text>
+<text class="ec-lbl" x="480" y="100" text-anchor="middle">18</text>
+<text class="ec-lbl" x="480" y="406" text-anchor="middle">18</text>
+<text class="ec-lbl" x="504" y="100" text-anchor="middle">19</text>
+<text class="ec-lbl" x="504" y="406" text-anchor="middle">19</text>
+<text class="ec-lbl" x="528" y="100" text-anchor="middle">20</text>
+<text class="ec-lbl" x="528" y="406" text-anchor="middle">20</text>
+<text class="ec-lbl" x="552" y="100" text-anchor="middle">21</text>
+<text class="ec-lbl" x="552" y="406" text-anchor="middle">21</text>
+<text class="ec-lbl" x="576" y="100" text-anchor="middle">22</text>
+<text class="ec-lbl" x="576" y="406" text-anchor="middle">22</text>
+<text class="ec-lbl" x="600" y="100" text-anchor="middle">23</text>
+<text class="ec-lbl" x="600" y="406" text-anchor="middle">23</text>
+<text class="ec-lbl" x="624" y="100" text-anchor="middle">24</text>
+<text class="ec-lbl" x="624" y="406" text-anchor="middle">24</text>
+<text class="ec-lbl" x="648" y="100" text-anchor="middle">25</text>
+<text class="ec-lbl" x="648" y="406" text-anchor="middle">25</text>
+<text class="ec-lbl" x="672" y="100" text-anchor="middle">26</text>
+<text class="ec-lbl" x="672" y="406" text-anchor="middle">26</text>
+<text class="ec-lbl" x="696" y="100" text-anchor="middle">27</text>
+<text class="ec-lbl" x="696" y="406" text-anchor="middle">27</text>
+<text class="ec-lbl" x="720" y="100" text-anchor="middle">28</text>
+<text class="ec-lbl" x="720" y="406" text-anchor="middle">28</text>
+<text class="ec-lbl" x="744" y="100" text-anchor="middle">29</text>
+<text class="ec-lbl" x="744" y="406" text-anchor="middle">29</text>
+<text class="ec-lbl" x="768" y="100" text-anchor="middle">30</text>
+<text class="ec-lbl" x="768" y="406" text-anchor="middle">30</text>
+<path class="ec-ext" d="M 96 386 L 96 510"/>
+<circle class="ec-extdot" cx="96" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 264 386 L 264 510"/>
+<circle class="ec-extdot" cx="264" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 144 116 L 144 -8"/>
+<circle class="ec-extdot" cx="144" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 168 116 L 168 -8"/>
+<circle class="ec-extdot" cx="168" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 192 116 L 192 -8"/>
+<circle class="ec-extdot" cx="192" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 216 116 L 216 -8"/>
+<circle class="ec-extdot" cx="216" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 240 116 L 240 -8"/>
+<circle class="ec-extdot" cx="240" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 312 386 L 312 510"/>
+<circle class="ec-extdot" cx="312" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 480 386 L 480 510"/>
+<circle class="ec-extdot" cx="480" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 360 116 L 360 -8"/>
+<circle class="ec-extdot" cx="360" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 456 116 L 456 -8"/>
+<circle class="ec-extdot" cx="456" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 528 386 L 528 510"/>
+<circle class="ec-extdot" cx="528" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 696 386 L 696 510"/>
+<circle class="ec-extdot" cx="696" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 576 116 L 576 -8"/>
+<circle class="ec-extdot" cx="576" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 672 116 L 672 -8"/>
+<circle class="ec-extdot" cx="672" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 744 386 L 848 386"/>
+<circle class="ec-extdot" cx="744" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 768 46 L 768 -8"/>
+<circle class="ec-extdot" cx="768" cy="46" r="4.2"/>
+<path class="ec-ext" d="M 720 74 L 720 -8"/>
+<circle class="ec-extdot" cx="720" cy="74" r="4.2"/>
+<path class="ec-ext" d="M 624 428 L 624 510"/>
+<circle class="ec-extdot" cx="624" cy="428" r="4.2"/>
+<path class="ec-ext" d="M 720 314 L 848 314"/>
+<circle class="ec-extdot" cx="720" cy="314" r="4.2"/>
+<path class="ec-jmp2" d="M 768 74 H 788 V 428 H 768"/>
+<circle class="ec-jnum-bg" cx="788" cy="251" r="9"/>
+<text class="ec-jnum" x="788" y="255" text-anchor="middle">PJ</text>
+<path class="ec-jmp" d="M 72 386 V 428"/>
+<path class="ec-jmp" d="M 96 116 V 46"/>
+<path class="ec-jmp" d="M 120 116 V 74"/>
+<path class="ec-jmp" d="M 288 386 V 428"/>
+<path class="ec-jmp" d="M 312 116 V 46"/>
+<path class="ec-jmp" d="M 336 116 V 74"/>
+<path class="ec-jmp" d="M 504 386 V 428"/>
+<path class="ec-jmp" d="M 528 116 V 46"/>
+<path class="ec-jmp" d="M 552 116 V 74"/>
+<path class="ec-jmp" d="M 696 116 V 74"/>
+<path class="ec-jmp" d="M 744 116 V 74"/>
+<path class="ec-jmp" d="M 720 212 V 290"/>
+<path class="ec-jmp" d="M 720 386 V 456"/>
+<rect class="pb-dip" x="63" y="131" width="187" height="193" rx="4"/>
+<text class="ec-onlight" x="156" y="247" text-anchor="middle">ADS1220 Z</text>
+<text class="pb-val" x="156" y="261" text-anchor="middle">label up &#183; AIN0/DRDY at 8</text>
+<text class="pb-pn" x="72" y="305" text-anchor="middle" transform="rotate(-90 72 305)">AGND</text>
+<text class="pb-pn" x="120" y="305" text-anchor="middle" transform="rotate(-90 120 305)">REFP0</text>
+<text class="pb-pn" x="144" y="305" text-anchor="middle" transform="rotate(-90 144 305)">REFN0</text>
+<text class="pb-pn" x="168" y="305" text-anchor="middle" transform="rotate(-90 168 305)">AIN3</text>
+<text class="pb-pn" x="192" y="305" text-anchor="middle" transform="rotate(-90 192 305)">AIN2</text>
+<text class="pb-pn" x="216" y="305" text-anchor="middle" transform="rotate(-90 216 305)">AIN1</text>
+<text class="pb-pn" x="240" y="305" text-anchor="middle" transform="rotate(-90 240 305)">AIN0</text>
+<text class="pb-pn" x="72" y="155" text-anchor="middle" transform="rotate(-90 72 155)">DGND</text>
+<text class="pb-pn" x="96" y="155" text-anchor="middle" transform="rotate(-90 96 155)">DVDD</text>
+<text class="pb-pn" x="120" y="155" text-anchor="middle" transform="rotate(-90 120 155)">CLK</text>
+<text class="pb-pn" x="144" y="155" text-anchor="middle" transform="rotate(-90 144 155)">CS</text>
+<text class="pb-pn" x="168" y="155" text-anchor="middle" transform="rotate(-90 168 155)">SCLK</text>
+<text class="pb-pn" x="192" y="155" text-anchor="middle" transform="rotate(-90 192 155)">MOSI</text>
+<text class="pb-pn" x="216" y="155" text-anchor="middle" transform="rotate(-90 216 155)">MISO</text>
+<text class="pb-pn" x="240" y="155" text-anchor="middle" transform="rotate(-90 240 155)">DRDY</text>
+<circle class="ec-nosock" cx="96" cy="314" r="5"/>
+<text class="pb-pn" x="96" y="305" text-anchor="middle" transform="rotate(-90 96 305)">no skt</text>
+<rect class="pb-dip" x="279" y="131" width="187" height="193" rx="4"/>
+<text class="ec-onlight" x="372" y="247" text-anchor="middle">ADS1220 N</text>
+<text class="pb-val" x="372" y="261" text-anchor="middle">label up &#183; AIN0/DRDY at 17</text>
+<text class="pb-pn" x="288" y="305" text-anchor="middle" transform="rotate(-90 288 305)">AGND</text>
+<text class="pb-pn" x="336" y="305" text-anchor="middle" transform="rotate(-90 336 305)">REFP0</text>
+<text class="pb-pn" x="360" y="305" text-anchor="middle" transform="rotate(-90 360 305)">REFN0</text>
+<text class="pb-pn" x="384" y="305" text-anchor="middle" transform="rotate(-90 384 305)">AIN3</text>
+<text class="pb-pn" x="408" y="305" text-anchor="middle" transform="rotate(-90 408 305)">AIN2</text>
+<text class="pb-pn" x="432" y="305" text-anchor="middle" transform="rotate(-90 432 305)">AIN1</text>
+<text class="pb-pn" x="456" y="305" text-anchor="middle" transform="rotate(-90 456 305)">AIN0</text>
+<text class="pb-pn" x="288" y="155" text-anchor="middle" transform="rotate(-90 288 155)">DGND</text>
+<text class="pb-pn" x="312" y="155" text-anchor="middle" transform="rotate(-90 312 155)">DVDD</text>
+<text class="pb-pn" x="336" y="155" text-anchor="middle" transform="rotate(-90 336 155)">CLK</text>
+<text class="pb-pn" x="360" y="155" text-anchor="middle" transform="rotate(-90 360 155)">CS</text>
+<text class="pb-pn" x="384" y="155" text-anchor="middle" transform="rotate(-90 384 155)">SCLK</text>
+<text class="pb-pn" x="408" y="155" text-anchor="middle" transform="rotate(-90 408 155)">MOSI</text>
+<text class="pb-pn" x="432" y="155" text-anchor="middle" transform="rotate(-90 432 155)">MISO</text>
+<text class="pb-pn" x="456" y="155" text-anchor="middle" transform="rotate(-90 456 155)">DRDY</text>
+<circle class="ec-nosock" cx="312" cy="314" r="5"/>
+<text class="pb-pn" x="312" y="305" text-anchor="middle" transform="rotate(-90 312 305)">no skt</text>
+<rect class="pb-dip" x="495" y="131" width="187" height="193" rx="4"/>
+<text class="ec-onlight" x="588" y="247" text-anchor="middle">ADS1220 E</text>
+<text class="pb-val" x="588" y="261" text-anchor="middle">label up &#183; AIN0/DRDY at 26</text>
+<text class="pb-pn" x="504" y="305" text-anchor="middle" transform="rotate(-90 504 305)">AGND</text>
+<text class="pb-pn" x="552" y="305" text-anchor="middle" transform="rotate(-90 552 305)">REFP0</text>
+<text class="pb-pn" x="576" y="305" text-anchor="middle" transform="rotate(-90 576 305)">REFN0</text>
+<text class="pb-pn" x="600" y="305" text-anchor="middle" transform="rotate(-90 600 305)">AIN3</text>
+<text class="pb-pn" x="624" y="305" text-anchor="middle" transform="rotate(-90 624 305)">AIN2</text>
+<text class="pb-pn" x="648" y="305" text-anchor="middle" transform="rotate(-90 648 305)">AIN1</text>
+<text class="pb-pn" x="672" y="305" text-anchor="middle" transform="rotate(-90 672 305)">AIN0</text>
+<text class="pb-pn" x="504" y="155" text-anchor="middle" transform="rotate(-90 504 155)">DGND</text>
+<text class="pb-pn" x="528" y="155" text-anchor="middle" transform="rotate(-90 528 155)">DVDD</text>
+<text class="pb-pn" x="552" y="155" text-anchor="middle" transform="rotate(-90 552 155)">CLK</text>
+<text class="pb-pn" x="576" y="155" text-anchor="middle" transform="rotate(-90 576 155)">CS</text>
+<text class="pb-pn" x="600" y="155" text-anchor="middle" transform="rotate(-90 600 155)">SCLK</text>
+<text class="pb-pn" x="624" y="155" text-anchor="middle" transform="rotate(-90 624 155)">MOSI</text>
+<text class="pb-pn" x="648" y="155" text-anchor="middle" transform="rotate(-90 648 155)">MISO</text>
+<text class="pb-pn" x="672" y="155" text-anchor="middle" transform="rotate(-90 672 155)">DRDY</text>
+<circle class="ec-nosock" cx="528" cy="314" r="5"/>
+<text class="pb-pn" x="528" y="305" text-anchor="middle" transform="rotate(-90 528 305)">no skt</text>
+<rect class="pb-elec" x="685" y="141" width="71" height="45" rx="11"/>
+<text class="pb-pn" x="696" y="136" text-anchor="middle">1</text>
+<text class="pb-pn" x="720" y="136" text-anchor="middle">2</text>
+<text class="pb-pn" x="744" y="136" text-anchor="middle">3</text>
+<text class="ec-ondark" x="720.0" y="200.7" text-anchor="middle">VR1</text>
+<path class="ec-lead" d="M 240 362 L 264 362"/>
+<rect class="pb-res" x="244.5" y="357.0" width="15.0" height="10" rx="2" transform="rotate(0.0 252.0 362.0)"/>
+<text class="ec-ondark" x="252.0" y="351.0" text-anchor="middle">RbZ</text>
+<path class="ec-lead" d="M 96 362 L 216 362"/>
+<rect class="pb-res" x="120.0" y="357.0" width="72.0" height="10" rx="2" transform="rotate(0.0 156.0 362.0)"/>
+<text class="ec-ondark" x="156.0" y="351.0" text-anchor="middle">RbpZ</text>
+<path class="ec-lead" d="M 240 386 L 240 456"/>
+<rect class="pb-res" x="219.0" y="416.0" width="42.0" height="10" rx="2" transform="rotate(90.0 240.0 421.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="252.0" y="425.0" text-anchor="middle" transform="rotate(-90 252.0 421.0)">RaZ</text>
+<path class="ec-lead" d="M 216 386 L 216 456"/>
+<rect class="pb-res" x="195.0" y="416.0" width="42.0" height="10" rx="2" transform="rotate(90.0 216.0 421.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="204.0" y="425.0" text-anchor="middle" transform="rotate(-90 204.0 421.0)">RapZ</text>
+<path class="ec-lead" d="M 216 290 L 240 290"/>
+<rect class="pb-film" x="220.5" y="285.0" width="15.0" height="10" rx="2" transform="rotate(0.0 228.0 290.0)"/>
+<text class="ec-ondark" x="228.0" y="279.0" text-anchor="middle">CdifZ</text>
+<path class="ec-lead" d="M 456 362 L 480 362"/>
+<rect class="pb-res" x="460.5" y="357.0" width="15.0" height="10" rx="2" transform="rotate(0.0 468.0 362.0)"/>
+<text class="ec-ondark" x="468.0" y="351.0" text-anchor="middle">RbN</text>
+<path class="ec-lead" d="M 312 362 L 432 362"/>
+<rect class="pb-res" x="336.0" y="357.0" width="72.0" height="10" rx="2" transform="rotate(0.0 372.0 362.0)"/>
+<text class="ec-ondark" x="372.0" y="351.0" text-anchor="middle">RbpN</text>
+<path class="ec-lead" d="M 456 386 L 456 456"/>
+<rect class="pb-res" x="435.0" y="416.0" width="42.0" height="10" rx="2" transform="rotate(90.0 456.0 421.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="468.0" y="425.0" text-anchor="middle" transform="rotate(-90 468.0 421.0)">RaN</text>
+<path class="ec-lead" d="M 432 386 L 432 456"/>
+<rect class="pb-res" x="411.0" y="416.0" width="42.0" height="10" rx="2" transform="rotate(90.0 432.0 421.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="420.0" y="425.0" text-anchor="middle" transform="rotate(-90 420.0 421.0)">RapN</text>
+<path class="ec-lead" d="M 432 290 L 456 290"/>
+<rect class="pb-film" x="436.5" y="285.0" width="15.0" height="10" rx="2" transform="rotate(0.0 444.0 290.0)"/>
+<text class="ec-ondark" x="444.0" y="279.0" text-anchor="middle">CdifN</text>
+<path class="ec-lead" d="M 672 362 L 696 362"/>
+<rect class="pb-res" x="676.5" y="357.0" width="15.0" height="10" rx="2" transform="rotate(0.0 684.0 362.0)"/>
+<text class="ec-ondark" x="684.0" y="351.0" text-anchor="middle">RbE</text>
+<path class="ec-lead" d="M 528 362 L 648 362"/>
+<rect class="pb-res" x="552.0" y="357.0" width="72.0" height="10" rx="2" transform="rotate(0.0 588.0 362.0)"/>
+<text class="ec-ondark" x="588.0" y="351.0" text-anchor="middle">RbpE</text>
+<path class="ec-lead" d="M 672 386 L 672 456"/>
+<rect class="pb-res" x="651.0" y="416.0" width="42.0" height="10" rx="2" transform="rotate(90.0 672.0 421.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="684.0" y="425.0" text-anchor="middle" transform="rotate(-90 684.0 421.0)">RaE</text>
+<path class="ec-lead" d="M 648 386 L 648 456"/>
+<rect class="pb-res" x="627.0" y="416.0" width="42.0" height="10" rx="2" transform="rotate(90.0 648.0 421.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="636.0" y="425.0" text-anchor="middle" transform="rotate(-90 636.0 421.0)">RapE</text>
+<path class="ec-lead" d="M 648 290 L 672 290"/>
+<rect class="pb-film" x="652.5" y="285.0" width="15.0" height="10" rx="2" transform="rotate(0.0 660.0 290.0)"/>
+<text class="ec-ondark" x="660.0" y="279.0" text-anchor="middle">CdifE</text>
+<path class="ec-lead" d="M 720 362 L 744 362"/>
+<rect class="pb-res" x="724.5" y="357.0" width="15.0" height="10" rx="2" transform="rotate(0.0 732.0 362.0)"/>
+<text class="ec-ondark" x="732.0" y="351.0" text-anchor="middle">Rfd1</text>
+<path class="ec-lead" d="M 720 338 L 744 338"/>
+<rect class="pb-res" x="724.5" y="333.0" width="15.0" height="10" rx="2" transform="rotate(0.0 732.0 338.0)"/>
+<text class="ec-ondark" x="770.4" y="342.0" text-anchor="middle">Rfd2</text>
+<path class="ec-lead" d="M 600 428 L 600 456"/>
+<rect class="pb-cer" x="591.6" y="437.0" width="16.8" height="10" rx="2" transform="rotate(90.0 600.0 442.0)"/>
+<text class="ec-ondark" x="600.0" y="489.0" text-anchor="middle">Cref</text>
+<path class="ec-lead" d="M 72 46 L 72 74"/>
+<rect class="pb-cer" x="63.6" y="55.0" width="16.8" height="10" rx="2" transform="rotate(90.0 72.0 60.0)"/>
+<text class="ec-ondark" x="72.0" y="21.0" text-anchor="middle">Cd</text>
+<path class="ec-bus ec-bus-sclk" d="M 168 164 Q 276 146 384 164"/>
+<circle class="ec-busdot ec-bus-sclk" cx="168" cy="164" r="3.6"/>
+<circle class="ec-busdot ec-bus-sclk" cx="384" cy="164" r="3.6"/>
+<path class="ec-bus ec-bus-sclk" d="M 384 188 Q 492 206 600 188"/>
+<circle class="ec-busdot ec-bus-sclk" cx="384" cy="188" r="3.6"/>
+<circle class="ec-busdot ec-bus-sclk" cx="600" cy="188" r="3.6"/>
+<path class="ec-bus ec-bus-mosi" d="M 192 164 Q 300 130 408 164"/>
+<circle class="ec-busdot ec-bus-mosi" cx="192" cy="164" r="3.6"/>
+<circle class="ec-busdot ec-bus-mosi" cx="408" cy="164" r="3.6"/>
+<path class="ec-bus ec-bus-mosi" d="M 408 188 Q 516 222 624 188"/>
+<circle class="ec-busdot ec-bus-mosi" cx="408" cy="188" r="3.6"/>
+<circle class="ec-busdot ec-bus-mosi" cx="624" cy="188" r="3.6"/>
+<path class="ec-bus ec-bus-miso" d="M 216 164 Q 324 114 432 164"/>
+<circle class="ec-busdot ec-bus-miso" cx="216" cy="164" r="3.6"/>
+<circle class="ec-busdot ec-bus-miso" cx="432" cy="164" r="3.6"/>
+<path class="ec-bus ec-bus-miso" d="M 432 188 Q 540 238 648 188"/>
+<circle class="ec-busdot ec-bus-miso" cx="432" cy="188" r="3.6"/>
+<circle class="ec-busdot ec-bus-miso" cx="648" cy="188" r="3.6"/>
+<path class="ec-bus ec-bus-sclk" d="M 68 201 h 16"/>
+<text class="pb-val" x="88" y="205">SCLK</text>
+<path class="ec-bus ec-bus-mosi" d="M 130 201 h 16"/>
+<text class="pb-val" x="150" y="205">MOSI</text>
+<path class="ec-bus ec-bus-miso" d="M 192 201 h 16"/>
+<text class="pb-val" x="212" y="205">MISO</text>
+<circle class="ec-jnum-bg" cx="86" cy="343" r="9"/>
+<text class="ec-jnum" x="86" y="347" text-anchor="middle">1</text>
+<circle class="ec-jnum-bg" cx="110" cy="113" r="9"/>
+<text class="ec-jnum" x="110" y="117" text-anchor="middle">2</text>
+<circle class="ec-jnum-bg" cx="134" cy="95" r="9"/>
+<text class="ec-jnum" x="134" y="99" text-anchor="middle">3</text>
+<circle class="ec-jnum-bg" cx="302" cy="343" r="9"/>
+<text class="ec-jnum" x="302" y="347" text-anchor="middle">4</text>
+<circle class="ec-jnum-bg" cx="326" cy="113" r="9"/>
+<text class="ec-jnum" x="326" y="117" text-anchor="middle">5</text>
+<circle class="ec-jnum-bg" cx="376" cy="119" r="9"/>
+<text class="ec-jnum" x="376" y="123" text-anchor="middle">6</text>
+<circle class="ec-jnum-bg" cx="518" cy="343" r="9"/>
+<text class="ec-jnum" x="518" y="347" text-anchor="middle">7</text>
+<circle class="ec-jnum-bg" cx="542" cy="113" r="9"/>
+<text class="ec-jnum" x="542" y="117" text-anchor="middle">8</text>
+<circle class="ec-jnum-bg" cx="592" cy="119" r="9"/>
+<text class="ec-jnum" x="592" y="123" text-anchor="middle">9</text>
+<circle class="ec-jnum-bg" cx="710" cy="95" r="9"/>
+<text class="ec-jnum" x="710" y="99" text-anchor="middle">10</text>
+<circle class="ec-jnum-bg" cx="772" cy="119" r="9"/>
+<text class="ec-jnum" x="772" y="123" text-anchor="middle">11</text>
+<circle class="ec-jnum-bg" cx="734" cy="251" r="9"/>
+<text class="ec-jnum" x="734" y="255" text-anchor="middle">12</text>
+<circle class="ec-jnum-bg" cx="734" cy="485" r="9"/>
+<text class="ec-jnum" x="734" y="489" text-anchor="middle">13</text>
+<text class="ec-tag" x="100" y="514" text-anchor="end" transform="rotate(-90 100 514)">sensor B &#183; Z &#8722;</text>
+<text class="ec-tag" x="268" y="514" text-anchor="end" transform="rotate(-90 268 514)">sensor A &#183; Z +</text>
+<text class="ec-tag" x="148" y="-12" text-anchor="start" transform="rotate(-90 148 -12)">CS &#183; pin 18 &#183; GPIO24</text>
+<text class="ec-tag" x="172" y="-12" text-anchor="start" transform="rotate(-90 172 -12)">SCLK &#183; pin 23 &#183; GPIO11</text>
+<text class="ec-tag" x="196" y="-12" text-anchor="start" transform="rotate(-90 196 -12)">MOSI &#183; pin 19 &#183; GPIO10</text>
+<text class="ec-tag" x="220" y="-12" text-anchor="start" transform="rotate(-90 220 -12)">MISO &#183; pin 21 &#183; GPIO9</text>
+<text class="ec-tag" x="244" y="-12" text-anchor="start" transform="rotate(-90 244 -12)">DRDY &#183; pin 13 &#183; GPIO27</text>
+<text class="ec-tag" x="316" y="514" text-anchor="end" transform="rotate(-90 316 514)">sensor D &#183; N &#8722;</text>
+<text class="ec-tag" x="484" y="514" text-anchor="end" transform="rotate(-90 484 514)">sensor C &#183; N +</text>
+<text class="ec-tag" x="364" y="-12" text-anchor="start" transform="rotate(-90 364 -12)">CS &#183; pin 22 &#183; GPIO25</text>
+<text class="ec-tag" x="460" y="-12" text-anchor="start" transform="rotate(-90 460 -12)">DRDY &#183; pin 15 &#183; GPIO22</text>
+<text class="ec-tag" x="532" y="514" text-anchor="end" transform="rotate(-90 532 514)">sensor F &#183; E &#8722;</text>
+<text class="ec-tag" x="700" y="514" text-anchor="end" transform="rotate(-90 700 514)">sensor E &#183; E +</text>
+<text class="ec-tag" x="580" y="-12" text-anchor="start" transform="rotate(-90 580 -12)">CS &#183; pin 29 &#183; GPIO5</text>
+<text class="ec-tag" x="676" y="-12" text-anchor="start" transform="rotate(-90 676 -12)">DRDY &#183; pin 31 &#183; GPIO6</text>
+<text class="ec-tag" x="852" y="390" text-anchor="start">Pi 5V &#183; pin 2</text>
+<text class="ec-tag" x="772" y="-12" text-anchor="start" transform="rotate(-90 772 -12)">Pi 3V3 &#183; pin 1</text>
+<text class="ec-tag" x="724" y="-12" text-anchor="start" transform="rotate(-90 724 -12)">Pi GND &#183; pin 6</text>
+<text class="ec-tag" x="628" y="514" text-anchor="end" transform="rotate(-90 628 514)">sensor N &#183; sig gnd</text>
+<text class="ec-tag" x="852" y="318" text-anchor="start">to AUX &#183; VREF</text>
+</svg>
+      <figcaption class="tfoot-note">Thirteen jumpers plus PJ at column 30, and bus wires B1&#8211;B6 (coloured arcs) in rows G and H, top side, beneath the modules. The dashed red circle on each module is the AVDD pin that gets no socket. Blue stubs are wires that solder straight into the board, labelled with where they come from.</figcaption>
+    </figure>
+    <div class="tablewrap" style="margin-top:18px"><table class="nets" style="min-width:860px">
+      <thead><tr><th>Ref</th><th>Value</th><th>DigiKey</th><th>Holes</th><th>Nets, in pin order</th><th>Notes</th></tr></thead>
+      <tbody><tr class="keypart"><td class="ref">ADCZ</td><td class="val">ADS1220 Z</td><td class="dk">&#8212; (generic module)</td><td class="pins"><span class="pin">D1</span><span class="pin">D3&#8230;D8</span><span class="pin">I1&#8230;I8</span></td><td class="pins"><span class="pin">AGND</span><span class="pin">REFP0&#8230;AIN0</span><span class="pin">DGND&#8230;DRDY</span></td><td class="note">Label up, AIN0 and DRDY at the right. Digital side in an 8-pin female strip in row I. Analog side in a <b>1-pin</b> strip at AGND and a <b>6-pin</b> strip at REFP0&#8230;AIN0; the AVDD position gets <b>no socket</b>, and its pin must not touch the board: clip it off if in doubt (AVDD is tied to DVDD on the module)</td></tr>
+<tr><td class="ref">RbpZ</td><td class="val">10k</td><td class="dk">10KADCT-ND</td><td class="pins"><span class="pin">B2</span><span class="pin">B7</span></td><td class="pins"><span class="pin">SIGN_Z</span><span class="pin">AIN1_Z</span></td><td class="note">Minus leg, 10 k&#937; 0.1%. Lies flat over the four unused module strips</td></tr>
+<tr><td class="ref">RbZ</td><td class="val">10k</td><td class="dk">10KADCT-ND</td><td class="pins"><span class="pin">B8</span><span class="pin">B9</span></td><td class="pins"><span class="pin">AIN0_Z</span><span class="pin">SIGP_Z</span></td><td class="note">Plus leg, 10 k&#937; 0.1%. Stands on end</td></tr>
+<tr><td class="ref">RapZ</td><td class="val">4.99k</td><td class="dk">1712-YR1B4K99CCCT-ND</td><td class="pins"><span class="pin">A7</span><span class="pin">VREF rail, col 7</span></td><td class="pins"><span class="pin">AIN1_Z</span><span class="pin">VREF</span></td><td class="note">4.99 k&#937; 0.1% to the reference. Lies across the GND rail</td></tr>
+<tr><td class="ref">RaZ</td><td class="val">4.99k</td><td class="dk">1712-YR1B4K99CCCT-ND</td><td class="pins"><span class="pin">A8</span><span class="pin">VREF rail, col 8</span></td><td class="pins"><span class="pin">AIN0_Z</span><span class="pin">VREF</span></td><td class="note">4.99 k&#937; 0.1% to the reference. Lies across the GND rail</td></tr>
+<tr><td class="ref">CdifZ</td><td class="val">100n</td><td class="dk">495-1103-ND</td><td class="pins"><span class="pin">E7</span><span class="pin">E8</span></td><td class="pins"><span class="pin">AIN1_Z</span><span class="pin">AIN0_Z</span></td><td class="note">100 nF film. <b>Fit before the module</b>: lies flat under it, body toward the channel</td></tr>
+<tr class="keypart"><td class="ref">ADCN</td><td class="val">ADS1220 N</td><td class="dk">&#8212; (generic module)</td><td class="pins"><span class="pin">D10</span><span class="pin">D12&#8230;D17</span><span class="pin">I10&#8230;I17</span></td><td class="pins"><span class="pin">AGND</span><span class="pin">REFP0&#8230;AIN0</span><span class="pin">DGND&#8230;DRDY</span></td><td class="note">Label up, AIN0 and DRDY at the right. Digital side in an 8-pin female strip in row I. Analog side in a <b>1-pin</b> strip at AGND and a <b>6-pin</b> strip at REFP0&#8230;AIN0; the AVDD position gets <b>no socket</b>, and its pin must not touch the board: clip it off if in doubt (AVDD is tied to DVDD on the module)</td></tr>
+<tr><td class="ref">RbpN</td><td class="val">10k</td><td class="dk">10KADCT-ND</td><td class="pins"><span class="pin">B11</span><span class="pin">B16</span></td><td class="pins"><span class="pin">SIGN_N</span><span class="pin">AIN1_N</span></td><td class="note">Minus leg, 10 k&#937; 0.1%. Lies flat over the four unused module strips</td></tr>
+<tr><td class="ref">RbN</td><td class="val">10k</td><td class="dk">10KADCT-ND</td><td class="pins"><span class="pin">B17</span><span class="pin">B18</span></td><td class="pins"><span class="pin">AIN0_N</span><span class="pin">SIGP_N</span></td><td class="note">Plus leg, 10 k&#937; 0.1%. Stands on end</td></tr>
+<tr><td class="ref">RapN</td><td class="val">4.99k</td><td class="dk">1712-YR1B4K99CCCT-ND</td><td class="pins"><span class="pin">A16</span><span class="pin">VREF rail, col 16</span></td><td class="pins"><span class="pin">AIN1_N</span><span class="pin">VREF</span></td><td class="note">4.99 k&#937; 0.1% to the reference. Lies across the GND rail</td></tr>
+<tr><td class="ref">RaN</td><td class="val">4.99k</td><td class="dk">1712-YR1B4K99CCCT-ND</td><td class="pins"><span class="pin">A17</span><span class="pin">VREF rail, col 17</span></td><td class="pins"><span class="pin">AIN0_N</span><span class="pin">VREF</span></td><td class="note">4.99 k&#937; 0.1% to the reference. Lies across the GND rail</td></tr>
+<tr><td class="ref">CdifN</td><td class="val">100n</td><td class="dk">495-1103-ND</td><td class="pins"><span class="pin">E16</span><span class="pin">E17</span></td><td class="pins"><span class="pin">AIN1_N</span><span class="pin">AIN0_N</span></td><td class="note">100 nF film. <b>Fit before the module</b>: lies flat under it, body toward the channel</td></tr>
+<tr class="keypart"><td class="ref">ADCE</td><td class="val">ADS1220 E</td><td class="dk">&#8212; (generic module)</td><td class="pins"><span class="pin">D19</span><span class="pin">D21&#8230;D26</span><span class="pin">I19&#8230;I26</span></td><td class="pins"><span class="pin">AGND</span><span class="pin">REFP0&#8230;AIN0</span><span class="pin">DGND&#8230;DRDY</span></td><td class="note">Label up, AIN0 and DRDY at the right. Digital side in an 8-pin female strip in row I. Analog side in a <b>1-pin</b> strip at AGND and a <b>6-pin</b> strip at REFP0&#8230;AIN0; the AVDD position gets <b>no socket</b>, and its pin must not touch the board: clip it off if in doubt (AVDD is tied to DVDD on the module)</td></tr>
+<tr><td class="ref">RbpE</td><td class="val">10k</td><td class="dk">10KADCT-ND</td><td class="pins"><span class="pin">B20</span><span class="pin">B25</span></td><td class="pins"><span class="pin">SIGN_E</span><span class="pin">AIN1_E</span></td><td class="note">Minus leg, 10 k&#937; 0.1%. Lies flat over the four unused module strips</td></tr>
+<tr><td class="ref">RbE</td><td class="val">10k</td><td class="dk">10KADCT-ND</td><td class="pins"><span class="pin">B26</span><span class="pin">B27</span></td><td class="pins"><span class="pin">AIN0_E</span><span class="pin">SIGP_E</span></td><td class="note">Plus leg, 10 k&#937; 0.1%. Stands on end</td></tr>
+<tr><td class="ref">RapE</td><td class="val">4.99k</td><td class="dk">1712-YR1B4K99CCCT-ND</td><td class="pins"><span class="pin">A25</span><span class="pin">VREF rail, col 25</span></td><td class="pins"><span class="pin">AIN1_E</span><span class="pin">VREF</span></td><td class="note">4.99 k&#937; 0.1% to the reference. Lies across the GND rail</td></tr>
+<tr><td class="ref">RaE</td><td class="val">4.99k</td><td class="dk">1712-YR1B4K99CCCT-ND</td><td class="pins"><span class="pin">A26</span><span class="pin">VREF rail, col 26</span></td><td class="pins"><span class="pin">AIN0_E</span><span class="pin">VREF</span></td><td class="note">4.99 k&#937; 0.1% to the reference. Lies across the GND rail</td></tr>
+<tr><td class="ref">CdifE</td><td class="val">100n</td><td class="dk">495-1103-ND</td><td class="pins"><span class="pin">E25</span><span class="pin">E26</span></td><td class="pins"><span class="pin">AIN1_E</span><span class="pin">AIN0_E</span></td><td class="note">100 nF film. <b>Fit before the module</b>: lies flat under it, body toward the channel</td></tr>
+<tr class="keypart"><td class="ref">VR1</td><td class="val">LM4040 2.5V</td><td class="dk">LM4040DIZ-2.5/NOPB-ND</td><td class="pins"><span class="pin">H27</span><span class="pin">H28</span><span class="pin">H29</span></td><td class="pins"><span class="pin">GND</span><span class="pin">VREF</span><span class="pin">GND</span></td><td class="note">TO-92, either way round: the middle pin is the cathode and both outer pins go to GND (jumpers 10, 11)</td></tr>
+<tr><td class="ref">Rfd1</td><td class="val">2.87k</td><td class="dk">13-MFR-25FRF52-2K87CT-ND</td><td class="pins"><span class="pin">B28</span><span class="pin">B29</span></td><td class="pins"><span class="pin">VREF</span><span class="pin">P5</span></td><td class="note">Feeds the reference from the Pi 5 V. Stands on end</td></tr>
+<tr><td class="ref">Rfd2</td><td class="val">2.87k</td><td class="dk">13-MFR-25FRF52-2K87CT-ND</td><td class="pins"><span class="pin">C28</span><span class="pin">C29</span></td><td class="pins"><span class="pin">VREF</span><span class="pin">P5</span></td><td class="note">In parallel with Rfd1: 1.44 k&#937; gives 1.7 mA; the dividers take up to 1.3 mA</td></tr>
+<tr><td class="ref">Cref</td><td class="val">100n</td><td class="dk">399-4264-ND</td><td class="pins"><span class="pin">GND btm, col 23</span><span class="pin">VREF rail, col 23</span></td><td class="pins"><span class="pin">GND</span><span class="pin">VREF</span></td><td class="note">Decouples the VREF rail. Any 100 nF ceramic</td></tr>
+<tr><td class="ref">Cd</td><td class="val">100n</td><td class="dk">399-4264-ND</td><td class="pins"><span class="pin">3V3 rail, col 1</span><span class="pin">GND top, col 1</span></td><td class="pins"><span class="pin">3V3</span><span class="pin">GND</span></td><td class="note">3V3 rail decoupling at the far end from the Pi wire</td></tr></tbody>
+    </table></div>
+    <div class="runs">
+      <div class="runcard"><h4>Jumpers</h4><table class="nets" style="min-width:0"><thead><tr><th>#</th><th>Jumper</th><th>Net</th></tr></thead><tbody><tr><td class="cnt">1</td><td class="pins"><span class="pin">A1</span>&#8594;<span class="pin">GND btm, col 1</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">2</td><td class="pins"><span class="pin">J2</span>&#8594;<span class="pin">3V3 rail, col 2</span></td><td class="note">3V3</td></tr>
+<tr><td class="cnt">3</td><td class="pins"><span class="pin">J3</span>&#8594;<span class="pin">GND top, col 3</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">4</td><td class="pins"><span class="pin">A10</span>&#8594;<span class="pin">GND btm, col 10</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">5</td><td class="pins"><span class="pin">J11</span>&#8594;<span class="pin">3V3 rail, col 11</span></td><td class="note">3V3</td></tr>
+<tr><td class="cnt">6</td><td class="pins"><span class="pin">J12</span>&#8594;<span class="pin">GND top, col 12</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">7</td><td class="pins"><span class="pin">A19</span>&#8594;<span class="pin">GND btm, col 19</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">8</td><td class="pins"><span class="pin">J20</span>&#8594;<span class="pin">3V3 rail, col 20</span></td><td class="note">3V3</td></tr>
+<tr><td class="cnt">9</td><td class="pins"><span class="pin">J21</span>&#8594;<span class="pin">GND top, col 21</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">10</td><td class="pins"><span class="pin">J27</span>&#8594;<span class="pin">GND top, col 27</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">11</td><td class="pins"><span class="pin">J29</span>&#8594;<span class="pin">GND top, col 29</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">12</td><td class="pins"><span class="pin">F28</span>&#8594;<span class="pin">E28</span></td><td class="note">VREF</td></tr>
+<tr><td class="cnt">13</td><td class="pins"><span class="pin">A28</span>&#8594;<span class="pin">VREF rail, col 28</span></td><td class="note">VREF</td></tr>
+<tr><td class="cnt">B1</td><td class="pins"><span class="pin">H5</span>&#8594;<span class="pin">H14</span></td><td class="note">SCLK &#183; bus wire, top side, beneath the modules</td></tr>
+<tr><td class="cnt">B2</td><td class="pins"><span class="pin">G14</span>&#8594;<span class="pin">G23</span></td><td class="note">SCLK &#183; bus wire, top side, beneath the modules</td></tr>
+<tr><td class="cnt">B3</td><td class="pins"><span class="pin">H6</span>&#8594;<span class="pin">H15</span></td><td class="note">MOSI &#183; bus wire, top side, beneath the modules</td></tr>
+<tr><td class="cnt">B4</td><td class="pins"><span class="pin">G15</span>&#8594;<span class="pin">G24</span></td><td class="note">MOSI &#183; bus wire, top side, beneath the modules</td></tr>
+<tr><td class="cnt">B5</td><td class="pins"><span class="pin">H7</span>&#8594;<span class="pin">H16</span></td><td class="note">MISO &#183; bus wire, top side, beneath the modules</td></tr>
+<tr><td class="cnt">B6</td><td class="pins"><span class="pin">G16</span>&#8594;<span class="pin">G25</span></td><td class="note">MISO &#183; bus wire, top side, beneath the modules</td></tr>
+<tr><td class="cnt">PJ</td><td class="pins"><span class="pin">GND top, col 30</span>&#8594;<span class="pin">GND btm, col 30</span></td><td class="note">GND &#183; ties the two ground rails; run it beside column 30 or on the underside</td></tr></tbody></table></div>
+      <div class="runcard"><h4>Wires in</h4><table class="nets" style="min-width:0"><thead><tr><th>Hole</th><th>Net</th><th>From</th></tr></thead><tbody><tr><td class="pins"><span class="pin">A2</span></td><td class="val">SIGN_Z</td><td class="note">sensor B &#183; Z &#8722;</td></tr>
+<tr><td class="pins"><span class="pin">A9</span></td><td class="val">SIGP_Z</td><td class="note">sensor A &#183; Z +</td></tr>
+<tr><td class="pins"><span class="pin">J4</span></td><td class="val">CS_Z</td><td class="note">CS &#183; pin 18 &#183; GPIO24</td></tr>
+<tr><td class="pins"><span class="pin">J5</span></td><td class="val">SCLK</td><td class="note">SCLK &#183; pin 23 &#183; GPIO11</td></tr>
+<tr><td class="pins"><span class="pin">J6</span></td><td class="val">MOSI</td><td class="note">MOSI &#183; pin 19 &#183; GPIO10</td></tr>
+<tr><td class="pins"><span class="pin">J7</span></td><td class="val">MISO</td><td class="note">MISO &#183; pin 21 &#183; GPIO9</td></tr>
+<tr><td class="pins"><span class="pin">J8</span></td><td class="val">DRDY_Z</td><td class="note">DRDY &#183; pin 13 &#183; GPIO27</td></tr>
+<tr><td class="pins"><span class="pin">A11</span></td><td class="val">SIGN_N</td><td class="note">sensor D &#183; N &#8722;</td></tr>
+<tr><td class="pins"><span class="pin">A18</span></td><td class="val">SIGP_N</td><td class="note">sensor C &#183; N +</td></tr>
+<tr><td class="pins"><span class="pin">J13</span></td><td class="val">CS_N</td><td class="note">CS &#183; pin 22 &#183; GPIO25</td></tr>
+<tr><td class="pins"><span class="pin">J17</span></td><td class="val">DRDY_N</td><td class="note">DRDY &#183; pin 15 &#183; GPIO22</td></tr>
+<tr><td class="pins"><span class="pin">A20</span></td><td class="val">SIGN_E</td><td class="note">sensor F &#183; E &#8722;</td></tr>
+<tr><td class="pins"><span class="pin">A27</span></td><td class="val">SIGP_E</td><td class="note">sensor E &#183; E +</td></tr>
+<tr><td class="pins"><span class="pin">J22</span></td><td class="val">CS_E</td><td class="note">CS &#183; pin 29 &#183; GPIO5</td></tr>
+<tr><td class="pins"><span class="pin">J26</span></td><td class="val">DRDY_E</td><td class="note">DRDY &#183; pin 31 &#183; GPIO6</td></tr>
+<tr><td class="pins"><span class="pin">A29</span></td><td class="val">P5</td><td class="note">Pi 5V &#183; pin 2</td></tr>
+<tr><td class="pins"><span class="pin">3V3 rail, col 30</span></td><td class="val">3V3</td><td class="note">Pi 3V3 &#183; pin 1</td></tr>
+<tr><td class="pins"><span class="pin">GND top, col 28</span></td><td class="val">GND</td><td class="note">Pi GND &#183; pin 6</td></tr>
+<tr><td class="pins"><span class="pin">GND btm, col 24</span></td><td class="val">GND</td><td class="note">sensor N &#183; sig gnd</td></tr>
+<tr><td class="pins"><span class="pin">D28</span></td><td class="val">VREF</td><td class="note">to AUX &#183; VREF</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="aux">
+    <h2>AUX board</h2>
+    <p class="lede">Sits under the ADC board. Mass positions, the Pi&rsquo;s lock / unlock / centre outputs, and the 12 V pass-through. Top rails: <b>VREF</b> (wired from the ADC board) and <b>GND</b>; the rail next to row A is unused and the bottom rail is <b>GND</b> for the ADS1115 (PJ ties it to the top GND rail). The 12 V strips at columns 13&#8211;17 and the optocoupler outputs at 19&#8211;26 touch no rail, so the sensor side stays separate from the Pi&rsquo;s ground.</p>
+    <figure class="fig-frame" style="margin:0">
+      <svg class="ec" viewBox="-46 -138 946 819" role="img" aria-label="Auxiliary board layout. A generic ADS1115 breakout stands upright on its 10-pin header in row D at columns 3 to 12; four jumpers carry its A0 to A3 pins across the channel to the divider strips at columns 7, 6, 5 and 4. Three 90.9k resistors bring the sensor mass position lines in from columns 1, 11 and 12, and three 10k resistors tie each input to the 2.5 volt reference on the top rail, which is wired over from the ADC board. In the lower bank at columns 13 to 17, a strip island carries the adapter 12 volts through a 1N5819 diode to the sensor power wires. At columns 19 to 27, three LTV-817 optocouplers straddle the channel: Pi GPIOs drive their LEDs through 1k resistors, and their transistors pull the sensor centre, unlock and lock lines to logic ground Y.">
+<rect class="ec-board" x="0" y="0" width="840" height="502" rx="15"/>
+<rect class="ec-chan" x="34" y="224" width="772" height="54" rx="4"/>
+<circle class="ec-mount" cx="26" cy="26" r="8"/>
+<circle class="ec-mount" cx="814" cy="26" r="8"/>
+<circle class="ec-mount" cx="26" cy="476" r="8"/>
+<circle class="ec-mount" cx="814" cy="476" r="8"/>
+<rect class="ec-vr" x="58" y="34" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="51" text-anchor="end">VREF</text>
+<rect class="ec-gnd" x="58" y="62" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="79" text-anchor="end">GND</text>
+<rect class="ec-off" x="58" y="416" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="433" text-anchor="end">&#8212;</text>
+<rect class="ec-gnd" x="58" y="444" width="724" height="24" rx="12"/>
+<text class="ec-raillbl" x="48" y="461" text-anchor="end">GND</text>
+<circle class="ec-rail" cx="72" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="46" r="6.6"/>
+<circle class="ec-rail" cx="72" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="74" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="74" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="116" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="140" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="164" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="188" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="212" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="290" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="314" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="338" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="362" r="6.6"/>
+<circle class="ec-hole" cx="72" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="96" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="120" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="144" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="168" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="192" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="216" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="240" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="264" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="288" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="312" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="336" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="360" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="384" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="408" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="432" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="456" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="480" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="504" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="528" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="552" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="576" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="600" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="624" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="648" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="672" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="696" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="720" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="744" cy="386" r="6.6"/>
+<circle class="ec-hole" cx="768" cy="386" r="6.6"/>
+<circle class="ec-rail" cx="72" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="428" r="6.6"/>
+<circle class="ec-rail" cx="72" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="96" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="120" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="144" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="168" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="192" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="216" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="240" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="264" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="288" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="312" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="336" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="360" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="384" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="408" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="432" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="456" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="480" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="504" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="528" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="552" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="576" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="600" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="624" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="648" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="672" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="696" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="720" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="744" cy="456" r="6.6"/>
+<circle class="ec-rail" cx="768" cy="456" r="6.6"/>
+<text class="ec-lbl" x="48" y="390" text-anchor="end">A</text>
+<text class="ec-lbl" x="792" y="390" text-anchor="start">A</text>
+<text class="ec-lbl" x="48" y="366" text-anchor="end">B</text>
+<text class="ec-lbl" x="792" y="366" text-anchor="start">B</text>
+<text class="ec-lbl" x="48" y="342" text-anchor="end">C</text>
+<text class="ec-lbl" x="792" y="342" text-anchor="start">C</text>
+<text class="ec-lbl" x="48" y="318" text-anchor="end">D</text>
+<text class="ec-lbl" x="792" y="318" text-anchor="start">D</text>
+<text class="ec-lbl" x="48" y="294" text-anchor="end">E</text>
+<text class="ec-lbl" x="792" y="294" text-anchor="start">E</text>
+<text class="ec-lbl" x="48" y="216" text-anchor="end">F</text>
+<text class="ec-lbl" x="792" y="216" text-anchor="start">F</text>
+<text class="ec-lbl" x="48" y="192" text-anchor="end">G</text>
+<text class="ec-lbl" x="792" y="192" text-anchor="start">G</text>
+<text class="ec-lbl" x="48" y="168" text-anchor="end">H</text>
+<text class="ec-lbl" x="792" y="168" text-anchor="start">H</text>
+<text class="ec-lbl" x="48" y="144" text-anchor="end">I</text>
+<text class="ec-lbl" x="792" y="144" text-anchor="start">I</text>
+<text class="ec-lbl" x="48" y="120" text-anchor="end">J</text>
+<text class="ec-lbl" x="792" y="120" text-anchor="start">J</text>
+<text class="ec-lbl" x="72" y="100" text-anchor="middle">1</text>
+<text class="ec-lbl" x="72" y="406" text-anchor="middle">1</text>
+<text class="ec-lbl" x="96" y="100" text-anchor="middle">2</text>
+<text class="ec-lbl" x="96" y="406" text-anchor="middle">2</text>
+<text class="ec-lbl" x="120" y="100" text-anchor="middle">3</text>
+<text class="ec-lbl" x="120" y="406" text-anchor="middle">3</text>
+<text class="ec-lbl" x="144" y="100" text-anchor="middle">4</text>
+<text class="ec-lbl" x="144" y="406" text-anchor="middle">4</text>
+<text class="ec-lbl" x="168" y="100" text-anchor="middle">5</text>
+<text class="ec-lbl" x="168" y="406" text-anchor="middle">5</text>
+<text class="ec-lbl" x="192" y="100" text-anchor="middle">6</text>
+<text class="ec-lbl" x="192" y="406" text-anchor="middle">6</text>
+<text class="ec-lbl" x="216" y="100" text-anchor="middle">7</text>
+<text class="ec-lbl" x="216" y="406" text-anchor="middle">7</text>
+<text class="ec-lbl" x="240" y="100" text-anchor="middle">8</text>
+<text class="ec-lbl" x="240" y="406" text-anchor="middle">8</text>
+<text class="ec-lbl" x="264" y="100" text-anchor="middle">9</text>
+<text class="ec-lbl" x="264" y="406" text-anchor="middle">9</text>
+<text class="ec-lbl" x="288" y="100" text-anchor="middle">10</text>
+<text class="ec-lbl" x="288" y="406" text-anchor="middle">10</text>
+<text class="ec-lbl" x="312" y="100" text-anchor="middle">11</text>
+<text class="ec-lbl" x="312" y="406" text-anchor="middle">11</text>
+<text class="ec-lbl" x="336" y="100" text-anchor="middle">12</text>
+<text class="ec-lbl" x="336" y="406" text-anchor="middle">12</text>
+<text class="ec-lbl" x="360" y="100" text-anchor="middle">13</text>
+<text class="ec-lbl" x="360" y="406" text-anchor="middle">13</text>
+<text class="ec-lbl" x="384" y="100" text-anchor="middle">14</text>
+<text class="ec-lbl" x="384" y="406" text-anchor="middle">14</text>
+<text class="ec-lbl" x="408" y="100" text-anchor="middle">15</text>
+<text class="ec-lbl" x="408" y="406" text-anchor="middle">15</text>
+<text class="ec-lbl" x="432" y="100" text-anchor="middle">16</text>
+<text class="ec-lbl" x="432" y="406" text-anchor="middle">16</text>
+<text class="ec-lbl" x="456" y="100" text-anchor="middle">17</text>
+<text class="ec-lbl" x="456" y="406" text-anchor="middle">17</text>
+<text class="ec-lbl" x="480" y="100" text-anchor="middle">18</text>
+<text class="ec-lbl" x="480" y="406" text-anchor="middle">18</text>
+<text class="ec-lbl" x="504" y="100" text-anchor="middle">19</text>
+<text class="ec-lbl" x="504" y="406" text-anchor="middle">19</text>
+<text class="ec-lbl" x="528" y="100" text-anchor="middle">20</text>
+<text class="ec-lbl" x="528" y="406" text-anchor="middle">20</text>
+<text class="ec-lbl" x="552" y="100" text-anchor="middle">21</text>
+<text class="ec-lbl" x="552" y="406" text-anchor="middle">21</text>
+<text class="ec-lbl" x="576" y="100" text-anchor="middle">22</text>
+<text class="ec-lbl" x="576" y="406" text-anchor="middle">22</text>
+<text class="ec-lbl" x="600" y="100" text-anchor="middle">23</text>
+<text class="ec-lbl" x="600" y="406" text-anchor="middle">23</text>
+<text class="ec-lbl" x="624" y="100" text-anchor="middle">24</text>
+<text class="ec-lbl" x="624" y="406" text-anchor="middle">24</text>
+<text class="ec-lbl" x="648" y="100" text-anchor="middle">25</text>
+<text class="ec-lbl" x="648" y="406" text-anchor="middle">25</text>
+<text class="ec-lbl" x="672" y="100" text-anchor="middle">26</text>
+<text class="ec-lbl" x="672" y="406" text-anchor="middle">26</text>
+<text class="ec-lbl" x="696" y="100" text-anchor="middle">27</text>
+<text class="ec-lbl" x="696" y="406" text-anchor="middle">27</text>
+<text class="ec-lbl" x="720" y="100" text-anchor="middle">28</text>
+<text class="ec-lbl" x="720" y="406" text-anchor="middle">28</text>
+<text class="ec-lbl" x="744" y="100" text-anchor="middle">29</text>
+<text class="ec-lbl" x="744" y="406" text-anchor="middle">29</text>
+<text class="ec-lbl" x="768" y="100" text-anchor="middle">30</text>
+<text class="ec-lbl" x="768" y="406" text-anchor="middle">30</text>
+<path class="ec-ext" d="M 336 116 L 336 -8"/>
+<circle class="ec-extdot" cx="336" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 312 116 L 312 -8"/>
+<circle class="ec-extdot" cx="312" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 72 116 L 72 -8"/>
+<circle class="ec-extdot" cx="72" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 120 386 L 120 510"/>
+<circle class="ec-extdot" cx="120" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 168 386 L 168 510"/>
+<circle class="ec-extdot" cx="168" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 192 386 L 192 510"/>
+<circle class="ec-extdot" cx="192" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 744 74 L 744 -8"/>
+<circle class="ec-extdot" cx="744" cy="74" r="4.2"/>
+<path class="ec-ext" d="M 576 46 L 576 -8"/>
+<circle class="ec-extdot" cx="576" cy="46" r="4.2"/>
+<path class="ec-ext" d="M 360 386 L 360 510"/>
+<circle class="ec-extdot" cx="360" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 384 386 L 384 510"/>
+<circle class="ec-extdot" cx="384" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 432 386 L 432 510"/>
+<circle class="ec-extdot" cx="432" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 456 386 L 456 510"/>
+<circle class="ec-extdot" cx="456" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 552 116 L 552 -8"/>
+<circle class="ec-extdot" cx="552" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 528 386 L 528 510"/>
+<circle class="ec-extdot" cx="528" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 624 116 L 624 -8"/>
+<circle class="ec-extdot" cx="624" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 600 386 L 600 510"/>
+<circle class="ec-extdot" cx="600" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 696 116 L 696 -8"/>
+<circle class="ec-extdot" cx="696" cy="116" r="4.2"/>
+<path class="ec-ext" d="M 672 386 L 672 510"/>
+<circle class="ec-extdot" cx="672" cy="386" r="4.2"/>
+<path class="ec-ext" d="M 504 386 L 504 510"/>
+<circle class="ec-extdot" cx="504" cy="386" r="4.2"/>
+<path class="ec-jmp2" d="M 768 74 H 788 V 456 H 768"/>
+<circle class="ec-jnum-bg" cx="788" cy="251" r="9"/>
+<text class="ec-jnum" x="788" y="255" text-anchor="middle">PJ</text>
+<path class="ec-jmp" d="M 144 386 V 456"/>
+<path class="ec-jmp" d="M 216 386 V 456"/>
+<path class="ec-jmp" d="M 144 116 V 46"/>
+<path class="ec-jmp" d="M 384 362 H 432"/>
+<path class="ec-jmp" d="M 504 116 V 74"/>
+<path class="ec-jmp" d="M 576 116 V 74"/>
+<path class="ec-jmp" d="M 648 116 V 74"/>
+<path class="ec-jmp" d="M 504 338 H 576"/>
+<path class="ec-jmp" d="M 576 314 H 648"/>
+<path class="ec-jmp" d="M 264 290 L 216 212"/>
+<path class="ec-jmp" d="M 288 290 L 192 188"/>
+<path class="ec-jmp" d="M 312 290 L 168 164"/>
+<path class="ec-jmp" d="M 336 290 L 144 140"/>
+<rect class="pb-dip" x="106" y="304" width="245" height="19" rx="4"/>
+<circle class="pb-pin1" cx="120" cy="314" r="4.2"/>
+<text class="pb-pn" x="120" y="329" text-anchor="middle">VDD</text>
+<circle class="pb-pin1" cx="144" cy="314" r="4.2"/>
+<text class="pb-pn" x="144" y="329" text-anchor="middle">GND</text>
+<circle class="pb-pin1" cx="168" cy="314" r="4.2"/>
+<text class="pb-pn" x="168" y="329" text-anchor="middle">SCL</text>
+<circle class="pb-pin1" cx="192" cy="314" r="4.2"/>
+<text class="pb-pn" x="192" y="329" text-anchor="middle">SDA</text>
+<circle class="pb-pin1" cx="216" cy="314" r="4.2"/>
+<text class="pb-pn" x="216" y="329" text-anchor="middle">ADDR</text>
+<circle class="pb-pin1" cx="240" cy="314" r="4.2"/>
+<text class="pb-pn" x="240" y="329" text-anchor="middle">ALRT</text>
+<circle class="pb-pin1" cx="264" cy="314" r="4.2"/>
+<text class="pb-pn" x="264" y="329" text-anchor="middle">A0</text>
+<circle class="pb-pin1" cx="288" cy="314" r="4.2"/>
+<text class="pb-pn" x="288" y="329" text-anchor="middle">A1</text>
+<circle class="pb-pin1" cx="312" cy="314" r="4.2"/>
+<text class="pb-pn" x="312" y="329" text-anchor="middle">A2</text>
+<circle class="pb-pin1" cx="336" cy="314" r="4.2"/>
+<text class="pb-pn" x="336" y="329" text-anchor="middle">A3</text>
+<text class="ec-ondark" x="228" y="354" text-anchor="middle">U1 ADS1115 &#183; upright, chip toward A</text>
+<rect class="pb-dip" x="495" y="218" width="43" height="67" rx="4"/>
+<circle class="pb-pin1" cx="528" cy="226" r="3.4"/>
+<text class="ec-onlight" x="516" y="255" text-anchor="middle">OK1</text>
+<rect class="pb-dip" x="567" y="218" width="43" height="67" rx="4"/>
+<circle class="pb-pin1" cx="600" cy="226" r="3.4"/>
+<text class="ec-onlight" x="588" y="255" text-anchor="middle">OK2</text>
+<rect class="pb-dip" x="639" y="218" width="43" height="67" rx="4"/>
+<circle class="pb-pin1" cx="672" cy="226" r="3.4"/>
+<text class="ec-onlight" x="660" y="255" text-anchor="middle">OK3</text>
+<path class="ec-lead" d="M 216 140 L 336 140"/>
+<rect class="pb-res" x="240.0" y="135.0" width="72.0" height="10" rx="2" transform="rotate(0.0 276.0 140.0)"/>
+<text class="ec-ondark" x="276.0" y="129.0" text-anchor="middle">RmZ</text>
+<path class="ec-lead" d="M 216 116 L 216 46"/>
+<rect class="pb-res" x="195.0" y="76.0" width="42.0" height="10" rx="2" transform="rotate(-90.0 216.0 81.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="228.0" y="85.0" text-anchor="middle" transform="rotate(-90 228.0 81.0)">RrZ</text>
+<path class="ec-lead" d="M 192 164 L 312 164"/>
+<rect class="pb-res" x="216.0" y="159.0" width="72.0" height="10" rx="2" transform="rotate(0.0 252.0 164.0)"/>
+<text class="ec-ondark" x="252.0" y="183.0" text-anchor="middle">RmN</text>
+<path class="ec-lead" d="M 192 116 L 192 46"/>
+<rect class="pb-res" x="171.0" y="76.0" width="42.0" height="10" rx="2" transform="rotate(-90.0 192.0 81.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="204.0" y="85.0" text-anchor="middle" transform="rotate(-90 204.0 81.0)">RrN</text>
+<path class="ec-lead" d="M 168 140 L 72 140"/>
+<rect class="pb-res" x="91.2" y="135.0" width="57.6" height="10" rx="2" transform="rotate(180.0 120.0 140.0)"/>
+<text class="ec-ondark" x="120.0" y="129.0" text-anchor="middle">RmE</text>
+<path class="ec-lead" d="M 168 116 L 168 46"/>
+<rect class="pb-res" x="147.0" y="76.0" width="42.0" height="10" rx="2" transform="rotate(-90.0 168.0 81.0)"/>
+<text class="ec-ondark" style="font-size:10.5px" x="180.0" y="85.0" text-anchor="middle" transform="rotate(-90 180.0 81.0)">RrE</text>
+<path class="ec-lead" d="M 360 338 L 456 338"/>
+<rect class="pb-res" x="379.2" y="333.0" width="57.6" height="10" rx="2" transform="rotate(0.0 408.0 338.0)"/>
+<rect class="pb-band" x="429.8" y="333.0" width="4" height="10" transform="rotate(0.0 408.0 338.0)"/>
+<text class="ec-ondark" x="408.0" y="327.0" text-anchor="middle">D1</text>
+<path class="ec-lead" d="M 528 164 L 552 164"/>
+<rect class="pb-res" x="532.5" y="159.0" width="15.0" height="10" rx="2" transform="rotate(0.0 540.0 164.0)"/>
+<text class="ec-ondark" x="540.0" y="153.0" text-anchor="middle">Rk1</text>
+<path class="ec-lead" d="M 600 164 L 624 164"/>
+<rect class="pb-res" x="604.5" y="159.0" width="15.0" height="10" rx="2" transform="rotate(0.0 612.0 164.0)"/>
+<text class="ec-ondark" x="612.0" y="153.0" text-anchor="middle">Rk2</text>
+<path class="ec-lead" d="M 672 164 L 696 164"/>
+<rect class="pb-res" x="676.5" y="159.0" width="15.0" height="10" rx="2" transform="rotate(0.0 684.0 164.0)"/>
+<text class="ec-ondark" x="684.0" y="153.0" text-anchor="middle">Rk3</text>
+<circle class="ec-jnum-bg" cx="158" cy="373" r="9"/>
+<text class="ec-jnum" x="158" y="377" text-anchor="middle">1</text>
+<circle class="ec-jnum-bg" cx="230" cy="373" r="9"/>
+<text class="ec-jnum" x="230" y="377" text-anchor="middle">2</text>
+<circle class="ec-jnum-bg" cx="158" cy="17" r="9"/>
+<text class="ec-jnum" x="158" y="21" text-anchor="middle">3</text>
+<circle class="ec-jnum-bg" cx="472" cy="350" r="9"/>
+<text class="ec-jnum" x="472" y="354" text-anchor="middle">4</text>
+<circle class="ec-jnum-bg" cx="518" cy="127" r="9"/>
+<text class="ec-jnum" x="518" y="131" text-anchor="middle">5</text>
+<circle class="ec-jnum-bg" cx="590" cy="127" r="9"/>
+<text class="ec-jnum" x="590" y="131" text-anchor="middle">6</text>
+<circle class="ec-jnum-bg" cx="662" cy="127" r="9"/>
+<text class="ec-jnum" x="662" y="131" text-anchor="middle">7</text>
+<circle class="ec-jnum-bg" cx="540" cy="326" r="9"/>
+<text class="ec-jnum" x="540" y="330" text-anchor="middle">8</text>
+<circle class="ec-jnum-bg" cx="612" cy="302" r="9"/>
+<text class="ec-jnum" x="612" y="306" text-anchor="middle">9</text>
+<circle class="ec-jnum-bg" cx="250" cy="268" r="9"/>
+<text class="ec-jnum" x="250" y="272" text-anchor="middle">10</text>
+<circle class="ec-jnum-bg" cx="267" cy="236" r="9"/>
+<text class="ec-jnum" x="267" y="240" text-anchor="middle">11</text>
+<circle class="ec-jnum-bg" cx="287" cy="268" r="9"/>
+<text class="ec-jnum" x="287" y="272" text-anchor="middle">12</text>
+<circle class="ec-jnum-bg" cx="308" cy="268" r="9"/>
+<text class="ec-jnum" x="308" y="272" text-anchor="middle">13</text>
+<text class="ec-tag" x="340" y="-12" text-anchor="start" transform="rotate(-90 340 -12)">sensor G &#183; Z mass</text>
+<text class="ec-tag" x="316" y="-12" text-anchor="start" transform="rotate(-90 316 -12)">sensor J &#183; N mass</text>
+<text class="ec-tag" x="76" y="-12" text-anchor="start" transform="rotate(-90 76 -12)">sensor L &#183; E mass</text>
+<text class="ec-tag" x="124" y="514" text-anchor="end" transform="rotate(-90 124 514)">Pi 3V3 &#183; pin 17</text>
+<text class="ec-tag" x="172" y="514" text-anchor="end" transform="rotate(-90 172 514)">Pi SCL &#183; pin 5 &#183; GPIO3</text>
+<text class="ec-tag" x="196" y="514" text-anchor="end" transform="rotate(-90 196 514)">Pi SDA &#183; pin 3 &#183; GPIO2</text>
+<text class="ec-tag" x="748" y="-12" text-anchor="start" transform="rotate(-90 748 -12)">Pi GND &#183; pin 9</text>
+<text class="ec-tag" x="580" y="-12" text-anchor="start" transform="rotate(-90 580 -12)">from ADC &#183; VREF</text>
+<text class="ec-tag" x="364" y="514" text-anchor="end" transform="rotate(-90 364 514)">adapter + &#183; 12 V</text>
+<text class="ec-tag" x="388" y="514" text-anchor="end" transform="rotate(-90 388 514)">adapter &#8722; &#183; 12 V</text>
+<text class="ec-tag" x="436" y="514" text-anchor="end" transform="rotate(-90 436 514)">sensor b &#183; gnd</text>
+<text class="ec-tag" x="460" y="514" text-anchor="end" transform="rotate(-90 460 514)">sensor c &#183; +12</text>
+<text class="ec-tag" x="556" y="-12" text-anchor="start" transform="rotate(-90 556 -12)">Pi GPIO16 &#183; pin 36</text>
+<text class="ec-tag" x="532" y="514" text-anchor="end" transform="rotate(-90 532 514)">sensor U &#183; + centre btn</text>
+<text class="ec-tag" x="628" y="-12" text-anchor="start" transform="rotate(-90 628 -12)">Pi GPIO20 &#183; pin 38</text>
+<text class="ec-tag" x="604" y="514" text-anchor="end" transform="rotate(-90 604 514)">sensor W &#183; + unlock btn</text>
+<text class="ec-tag" x="700" y="-12" text-anchor="start" transform="rotate(-90 700 -12)">Pi GPIO21 &#183; pin 40</text>
+<text class="ec-tag" x="676" y="514" text-anchor="end" transform="rotate(-90 676 514)">sensor X &#183; + lock btn</text>
+<text class="ec-tag" x="508" y="514" text-anchor="end" transform="rotate(-90 508 514)">sensor Y &#183; + btn com</text>
+</svg>
+      <figcaption class="tfoot-note">Thirteen jumpers plus PJ, which ties the two ground rails (the bottom one serves the ADS1115; the rail next to row A is deliberately unused, so nothing live sits beside the 12 V and sensor-line holes). The ADS1115 stands upright in D3&#8211;D12; jumpers 10&#8211;13 carry A0&#8211;A3 across the channel to the divider strips.</figcaption>
+    </figure>
+    <div class="tablewrap" style="margin-top:18px"><table class="nets" style="min-width:860px">
+      <thead><tr><th>Ref</th><th>Value</th><th>DigiKey</th><th>Holes</th><th>Nets, in pin order</th><th>Notes</th></tr></thead>
+      <tbody><tr><td class="ref">U1</td><td class="val">ADS1115</td><td class="dk">&#8212; (generic module)</td><td class="pins"><span class="pin">D3&#8230;D12</span></td><td class="pins"><span class="pin">VDD GND SCL SDA ADDR ALRT A0 A1 A2 A3</span></td><td class="note">Generic blue ADS1115 board, 10-pin single row. <b>Stands upright</b> on its header in D3&#8211;D12, chip side toward row A. VDD&#8230;ALRT sit on strips 3&#8211;8 (the Pi wires and jumpers 1&#8211;2 serve them); A0&#8230;A3 on strips 9&#8211;12, carried across the channel by jumpers 10&#8211;13 to the Z, N, E and VREF strips. ADDR to GND (jumper 2) = I&#178;C address 0x48. A3 is on VREF (jumpers 3, 13) so the software measures the reference. ALRT stays open. <b>Chip marking BOGI</b> (BRPI is an ADS1015, 12-bit: reject)</td></tr>
+<tr><td class="ref">RmZ</td><td class="val">90.9k</td><td class="dk">90.9KXBK-ND</td><td class="pins"><span class="pin">I7</span><span class="pin">I12</span></td><td class="pins"><span class="pin">MZ</span><span class="pin">MASS_Z</span></td><td class="note">Mass-position input leg</td></tr>
+<tr><td class="ref">RrZ</td><td class="val">10k</td><td class="dk">10.0KXBK-ND</td><td class="pins"><span class="pin">J7</span><span class="pin">VREF rail, col 7</span></td><td class="pins"><span class="pin">MZ</span><span class="pin">VREF</span></td><td class="note">To VREF: shifts &#177;8.6 V into 1.40&#8211;3.11 V</td></tr>
+<tr><td class="ref">RmN</td><td class="val">90.9k</td><td class="dk">90.9KXBK-ND</td><td class="pins"><span class="pin">H6</span><span class="pin">H11</span></td><td class="pins"><span class="pin">MN</span><span class="pin">MASS_N</span></td><td class="note">Mass-position input leg</td></tr>
+<tr><td class="ref">RrN</td><td class="val">10k</td><td class="dk">10.0KXBK-ND</td><td class="pins"><span class="pin">J6</span><span class="pin">VREF rail, col 6</span></td><td class="pins"><span class="pin">MN</span><span class="pin">VREF</span></td><td class="note">To VREF</td></tr>
+<tr><td class="ref">RmE</td><td class="val">90.9k</td><td class="dk">90.9KXBK-ND</td><td class="pins"><span class="pin">I5</span><span class="pin">I1</span></td><td class="pins"><span class="pin">ME</span><span class="pin">MASS_E</span></td><td class="note">Mass-position input leg</td></tr>
+<tr><td class="ref">RrE</td><td class="val">10k</td><td class="dk">10.0KXBK-ND</td><td class="pins"><span class="pin">J5</span><span class="pin">VREF rail, col 5</span></td><td class="pins"><span class="pin">ME</span><span class="pin">VREF</span></td><td class="note">To VREF</td></tr>
+<tr><td class="ref">D1</td><td class="val">1N5819</td><td class="dk">1N5819FSCT-ND</td><td class="pins"><span class="pin">C13</span><span class="pin">C17</span></td><td class="pins"><span class="pin">V12IN</span><span class="pin">V12</span></td><td class="note">Reverse-polarity guard in the sensor&rsquo;s +12 V. <b>Band toward column 17</b>. Drops ~0.4 V</td></tr>
+<tr><td class="ref">OK1</td><td class="val">LTV-817</td><td class="dk">160-1366-5-ND</td><td class="pins"><span class="pin">F20</span><span class="pin">F19</span><span class="pin">E19</span><span class="pin">E20</span></td><td class="pins"><span class="pin">LED_U</span><span class="pin">GND</span><span class="pin">Y</span><span class="pin">CTL_U</span></td><td class="note">CENTRE. <b>Pin-1 dot top right</b> (F20): pin 1 anode F20, 2 cathode F19, 3 emitter E19, 4 collector E20. LED from the Pi; the transistor pulls U to Y</td></tr>
+<tr><td class="ref">Rk1</td><td class="val">1k</td><td class="dk">1.00KXBK-ND</td><td class="pins"><span class="pin">H20</span><span class="pin">H21</span></td><td class="pins"><span class="pin">LED_U</span><span class="pin">GPIO_U</span></td><td class="note">Stands on end. LED current from the Pi GPIO: (3.3 &#8722; 1.2 V) / 1 k = 2 mA</td></tr>
+<tr><td class="ref">OK2</td><td class="val">LTV-817</td><td class="dk">160-1366-5-ND</td><td class="pins"><span class="pin">F23</span><span class="pin">F22</span><span class="pin">E22</span><span class="pin">E23</span></td><td class="pins"><span class="pin">LED_W</span><span class="pin">GND</span><span class="pin">Y</span><span class="pin">CTL_W</span></td><td class="note">UNLOCK, same orientation, dot at F23. Pulls W to Y</td></tr>
+<tr><td class="ref">Rk2</td><td class="val">1k</td><td class="dk">1.00KXBK-ND</td><td class="pins"><span class="pin">H23</span><span class="pin">H24</span></td><td class="pins"><span class="pin">LED_W</span><span class="pin">GPIO_W</span></td><td class="note">Same</td></tr>
+<tr><td class="ref">OK3</td><td class="val">LTV-817</td><td class="dk">160-1366-5-ND</td><td class="pins"><span class="pin">F26</span><span class="pin">F25</span><span class="pin">E25</span><span class="pin">E26</span></td><td class="pins"><span class="pin">LED_X</span><span class="pin">GND</span><span class="pin">Y</span><span class="pin">CTL_X</span></td><td class="note">LOCK, same orientation, dot at F26. Pulls X to Y</td></tr>
+<tr><td class="ref">Rk3</td><td class="val">1k</td><td class="dk">1.00KXBK-ND</td><td class="pins"><span class="pin">H26</span><span class="pin">H27</span></td><td class="pins"><span class="pin">LED_X</span><span class="pin">GPIO_X</span></td><td class="note">Same</td></tr></tbody>
+    </table></div>
+    <div class="runs">
+      <div class="runcard"><h4>Jumpers</h4><table class="nets" style="min-width:0"><thead><tr><th>#</th><th>Jumper</th><th>Net</th></tr></thead><tbody><tr><td class="cnt">1</td><td class="pins"><span class="pin">A4</span>&#8594;<span class="pin">btm rail, col 4</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">2</td><td class="pins"><span class="pin">A7</span>&#8594;<span class="pin">btm rail, col 7</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">3</td><td class="pins"><span class="pin">J4</span>&#8594;<span class="pin">VREF rail, col 4</span></td><td class="note">VREF</td></tr>
+<tr><td class="cnt">4</td><td class="pins"><span class="pin">B14</span>&#8594;<span class="pin">B16</span></td><td class="note">V12N</td></tr>
+<tr><td class="cnt">5</td><td class="pins"><span class="pin">J19</span>&#8594;<span class="pin">GND top, col 19</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">6</td><td class="pins"><span class="pin">J22</span>&#8594;<span class="pin">GND top, col 22</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">7</td><td class="pins"><span class="pin">J25</span>&#8594;<span class="pin">GND top, col 25</span></td><td class="note">GND</td></tr>
+<tr><td class="cnt">8</td><td class="pins"><span class="pin">C19</span>&#8594;<span class="pin">C22</span></td><td class="note">Y</td></tr>
+<tr><td class="cnt">9</td><td class="pins"><span class="pin">D22</span>&#8594;<span class="pin">D25</span></td><td class="note">Y</td></tr>
+<tr><td class="cnt">10</td><td class="pins"><span class="pin">E9</span>&#8594;<span class="pin">F7</span></td><td class="note">MZ</td></tr>
+<tr><td class="cnt">11</td><td class="pins"><span class="pin">E10</span>&#8594;<span class="pin">G6</span></td><td class="note">MN</td></tr>
+<tr><td class="cnt">12</td><td class="pins"><span class="pin">E11</span>&#8594;<span class="pin">H5</span></td><td class="note">ME</td></tr>
+<tr><td class="cnt">13</td><td class="pins"><span class="pin">E12</span>&#8594;<span class="pin">I4</span></td><td class="note">VREF</td></tr>
+<tr><td class="cnt">PJ</td><td class="pins"><span class="pin">GND top, col 30</span>&#8594;<span class="pin">btm rail, col 30</span></td><td class="note">GND &#183; ties the two ground rails; run it beside column 30 or on the underside</td></tr></tbody></table></div>
+      <div class="runcard"><h4>Wires in</h4><table class="nets" style="min-width:0"><thead><tr><th>Hole</th><th>Net</th><th>From</th></tr></thead><tbody><tr><td class="pins"><span class="pin">J12</span></td><td class="val">MASS_Z</td><td class="note">sensor G &#183; Z mass</td></tr>
+<tr><td class="pins"><span class="pin">J11</span></td><td class="val">MASS_N</td><td class="note">sensor J &#183; N mass</td></tr>
+<tr><td class="pins"><span class="pin">J1</span></td><td class="val">MASS_E</td><td class="note">sensor L &#183; E mass</td></tr>
+<tr><td class="pins"><span class="pin">A3</span></td><td class="val">3V3</td><td class="note">Pi 3V3 &#183; pin 17</td></tr>
+<tr><td class="pins"><span class="pin">A5</span></td><td class="val">SCL</td><td class="note">Pi SCL &#183; pin 5 &#183; GPIO3</td></tr>
+<tr><td class="pins"><span class="pin">A6</span></td><td class="val">SDA</td><td class="note">Pi SDA &#183; pin 3 &#183; GPIO2</td></tr>
+<tr><td class="pins"><span class="pin">GND top, col 29</span></td><td class="val">GND</td><td class="note">Pi GND &#183; pin 9</td></tr>
+<tr><td class="pins"><span class="pin">VREF rail, col 22</span></td><td class="val">VREF</td><td class="note">from ADC &#183; VREF</td></tr>
+<tr><td class="pins"><span class="pin">A13</span></td><td class="val">V12IN</td><td class="note">adapter + &#183; 12 V</td></tr>
+<tr><td class="pins"><span class="pin">A14</span></td><td class="val">V12N</td><td class="note">adapter &#8722; &#183; 12 V</td></tr>
+<tr><td class="pins"><span class="pin">A16</span></td><td class="val">V12N</td><td class="note">sensor b &#183; gnd</td></tr>
+<tr><td class="pins"><span class="pin">A17</span></td><td class="val">V12</td><td class="note">sensor c &#183; +12</td></tr>
+<tr><td class="pins"><span class="pin">J21</span></td><td class="val">GPIO_U</td><td class="note">Pi GPIO16 &#183; pin 36</td></tr>
+<tr><td class="pins"><span class="pin">A20</span></td><td class="val">CTL_U</td><td class="note">sensor U &#183; + centre btn</td></tr>
+<tr><td class="pins"><span class="pin">J24</span></td><td class="val">GPIO_W</td><td class="note">Pi GPIO20 &#183; pin 38</td></tr>
+<tr><td class="pins"><span class="pin">A23</span></td><td class="val">CTL_W</td><td class="note">sensor W &#183; + unlock btn</td></tr>
+<tr><td class="pins"><span class="pin">J27</span></td><td class="val">GPIO_X</td><td class="note">Pi GPIO21 &#183; pin 40</td></tr>
+<tr><td class="pins"><span class="pin">A26</span></td><td class="val">CTL_X</td><td class="note">sensor X &#183; + lock btn</td></tr>
+<tr><td class="pins"><span class="pin">A19</span></td><td class="val">Y</td><td class="note">sensor Y &#183; + btn com</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="cable">
+    <h2>Sensor cables</h2>
+    <p class="lede">Two stranded Ethernet patch cables and a two-core power lead. At the sensor, each conductor ends in an insulated Dupont socket on its pin (letters on <code>connector_pinface.png</code>), with the housings retained and the bundle tied down to the floor before a loose loop. At the board box, each Ethernet cable plugs into a Cat6 keystone jack in the box&rsquo;s front wall, punched down T568B, with short wires from the jack to the boards. One cable per board: <b>SIG</b> carries the three velocity pairs and signal ground, all to the <b>ADC board</b>; <b>CTL</b> carries the three mass positions and the control lines, all to the <b>AUX board</b>. Keep the three leads apart for the first half-metre from the sensor.</p>
+    <div class="tablewrap"><table class="pins">
+      <thead><tr><th>Pin</th><th>Function</th><th>Cable &#183; pair &#183; T568B pin</th><th>Lands on</th><th>Note</th></tr></thead>
+      <tbody><tr><td class="ref">A</td><td class="pkg">Z velocity +</td><td class="bits">SIG &#183; orange &#183; 1 (wh-or)</td><td class="val">ADC A9</td><td class="note">Each velocity pair on its own twisted pair</td></tr>
+<tr><td class="ref">B</td><td class="pkg">Z velocity &#8722;</td><td class="bits">SIG &#183; orange &#183; 2 (or)</td><td class="val">ADC A2</td><td class="note"></td></tr>
+<tr><td class="ref">C</td><td class="pkg">N velocity +</td><td class="bits">SIG &#183; green &#183; 3 (wh-gn)</td><td class="val">ADC A18</td><td class="note"></td></tr>
+<tr><td class="ref">D</td><td class="pkg">N velocity &#8722;</td><td class="bits">SIG &#183; green &#183; 6 (gn)</td><td class="val">ADC A11</td><td class="note"></td></tr>
+<tr><td class="ref">E</td><td class="pkg">E velocity +</td><td class="bits">SIG &#183; blue &#183; 5 (wh-bl)</td><td class="val">ADC A27</td><td class="note"></td></tr>
+<tr><td class="ref">F</td><td class="pkg">E velocity &#8722;</td><td class="bits">SIG &#183; blue &#183; 4 (bl)</td><td class="val">ADC A20</td><td class="note"></td></tr>
+<tr><td class="ref">N</td><td class="pkg">Signal ground</td><td class="bits">SIG &#183; brown &#183; 8 (br)</td><td class="val">ADC GND btm, col 24</td><td class="note">The sensor&rsquo;s only signal-ground tie</td></tr>
+<tr><td class="ref">&#8212;</td><td class="pkg">spare</td><td class="bits">SIG &#183; brown &#183; 7 (wh-br)</td><td class="val">&#8212;</td><td class="note">Unused; leave unpunched</td></tr>
+<tr><td class="ref">G</td><td class="pkg">Mass position Z</td><td class="bits">CTL &#183; orange &#183; 1 (wh-or)</td><td class="val">AUX J12</td><td class="note">All three mass positions on CTL</td></tr>
+<tr><td class="ref">J</td><td class="pkg">Mass position N</td><td class="bits">CTL &#183; green &#183; 3 (wh-gn)</td><td class="val">AUX J11</td><td class="note"></td></tr>
+<tr><td class="ref">L</td><td class="pkg">Mass position E</td><td class="bits">CTL &#183; green &#183; 6 (gn)</td><td class="val">AUX J1</td><td class="note"></td></tr>
+<tr><td class="ref">U</td><td class="pkg">Centre</td><td class="bits">CTL &#183; blue &#183; 5 (wh-bl)</td><td class="val">AUX A20</td><td class="note">OK1, and the CENTRE button to Y</td></tr>
+<tr><td class="ref">Y</td><td class="pkg">Logic ground</td><td class="bits">CTL &#183; blue &#183; 4 (bl)</td><td class="val">AUX A19</td><td class="note">Optocoupler emitters; the three buttons&rsquo; commons share the hole</td></tr>
+<tr><td class="ref">W</td><td class="pkg">Unlock</td><td class="bits">CTL &#183; brown &#183; 7 (wh-br)</td><td class="val">AUX A23</td><td class="note">OK2, and the UNLOCK button to Y</td></tr>
+<tr><td class="ref">X</td><td class="pkg">Lock</td><td class="bits">CTL &#183; brown &#183; 8 (br)</td><td class="val">AUX A26</td><td class="note">OK3, and the LOCK button to Y</td></tr>
+<tr><td class="ref">&#8212;</td><td class="pkg">spare</td><td class="bits">CTL &#183; orange &#183; 2 (or)</td><td class="val">&#8212;</td><td class="note">Unused; leave unpunched</td></tr>
+<tr><td class="ref">c</td><td class="pkg">Power +</td><td class="bits">power lead, red</td><td class="val">AUX A17</td><td class="note"><b>Own two-core lead, not in either Ethernet cable</b>: after D1</td></tr>
+<tr><td class="ref">b</td><td class="pkg">Power ground</td><td class="bits">power lead, black</td><td class="val">AUX A16</td><td class="note">12 V return, strip-joined to the adapter &#8722;. Goes nowhere else: the sensor ties b to its signal ground inside</td></tr></tbody>
+    </table></div>
+    <p class="tfoot-note"><b>Why power has its own lead:</b> plugging SIG and CTL into each other&rsquo;s jacks is then harmless. The worst a swap does is put the lock line on signal ground and lock the masses. With 12 V in an Ethernet cable, a swap would drive the sensor&rsquo;s outputs from the supply. Use two cable colours and two jack colours anyway, and label both ends. If shielded cable is used, the drain goes to GND at the board end only.</p>
+    <p class="tfoot-note">Each panel button shorts its line to Y; the optocoupler beside it does the same for the Pi. Solder the button lead into the same hole as the sensor wire. The lines are active-low (idle 5 V). The 12 V adapter enters through the VIN panel jack, wired to AUX A13 (+) and A14 (&#8722;); the sensor&rsquo;s power lead leaves through the VOUT jack, wired to A17 (+) and A16 (&#8722;).</p>
+  </section>
+
+  <section id="assembly">
+    <h2>Assembly and test</h2>
+    <div class="stage"><h3><span class="sn">Stage 1</span>ADC board</h3><ol class="astep"><li class="gate"><span class="txt"><span class="badge">check</span><b>Quick meter check per module</b> &#8212; The purple module ties AVDD to DVDD and pulls CLK to DGND with 10 k&#937; (marked <code>103</code>). Module unpowered: <b>AVDD to DVDD ~0 &#937;</b> (&#937;, 200 range), <b>CLK to DGND ~10 k&#937;</b> (&#937;, 20k range; not continuity, which can&rsquo;t see 10 k&#937;). It matters because AVDD gets no socket. A module that differs is a spare.</span></li>
+<li><span class="txt"><b>Cut the female headers</b> &#8212; Per module: one 8-pin (digital), one 6-pin and one 1-pin (analog). Cut through a contact, not between, and sand the ends.</span></li>
+<li><span class="txt"><b>Jumpers 1&#8211;13</b> &#8212; All of them now, while the board is bare. Rail jumpers 2, 3, 5, 6, 8, 9 hop over the GND rail; keep them flat.</span></li>
+<li><span class="txt"><b>Bus wires B1&#8211;B6</b> &#8212; SCLK, MOSI and MISO from module Z to N (row H) and N to E (row G), in the free holes between the socket rows. Insulated wire on the top side, lying flat: the modules sit over them on their sockets. Not the solder side. Fit before the modules, like Cdif. Then one plain Pi lead per signal is enough.</span></li>
+<li><span class="txt"><b>Cdif &#215;3 under the modules</b> &#8212; Lay each film cap flat with its body toward the channel, leads into E7/E8, E16/E17, E25/E26. This is the only chance to fit them.</span></li>
+<li><span class="txt"><b>Sockets</b> &#8212; Solder the three 8-pin strips in row I and the 1+6 strips in row D, with a module plugged in to hold them square. Then take the modules out again. <b>No socket at D2, D11 or D20</b> (the AVDD pin): those columns carry the sensor&rsquo;s minus lead, and a socket there ties it to 3.3 V. If one got fitted, clip the AVDD pin off the module instead; AVDD is fed through the module&rsquo;s own AVDD&ndash;DVDD link.</span></li>
+<li><span class="txt"><b>Dividers</b> &#8212; Rbp flat in row B, Rb on end, Ra/Rap across the GND rail. <b>Check each value with the meter before soldering</b>: 4.99k and 10k 0.1% look alike.</span></li>
+<li><span class="txt"><b>Reference</b> &#8212; VR1 in H27&#8211;H29 (either way round), Rfd1, Rfd2, Cref, Cd, PJ.</span></li>
+<li class="gate"><span class="txt"><span class="badge">check</span><b>Power test, no modules, no sensor</b> &#8212; First unpowered, &#937;: A29 to VREF rail ~1.44 k&#937; (2k range); 3V3 rail and VREF rail to GND not ~0 (200 range). Then Pi 3V3/5V/GND wires on, all readings on <b>20 V DC</b>: 3V3 rail ~3.3 V; <b>VREF rail = 2.50 V</b> (the 20 V range shows 10 mV steps, the D-grade part is 1%, so anything 2.48&ndash;2.52 passes). With the sensor leads open, each AIN strip reads 2.50 V (no current in Rb). Short a sensor lead to GND and that AIN drops to <b>1.67 V</b>.</span></li>
+<li><span class="txt"><b>Modules in, Pi wires on</b> &#8212; Nine plain leads: CS and DRDY for each module, and SCLK / MOSI / MISO into J5 / J6 / J7 only. Register readback on each module before anything else.</span></li>
+<li class="gate"><span class="txt"><span class="badge">check</span><b>Shorted-input noise</b> &#8212; Short each channel&rsquo;s two sensor leads to GND and log ten minutes. Expect ~1.5 nm/s/&#8730;Hz equivalent at turbo 180 SPS (0.72 &#181;V/&#8730;Hz), flat above 0.5 Hz; below that is what this test is for. Do this before the sensor is connected.</span></li></ol></div>
+    <div class="stage"><h3><span class="sn">Stage 2</span>AUX board</h3><ol class="astep"><li><span class="txt"><b>Jumpers first, then the resistors</b> &#8212; RmE I5&#8594;I1, RmZ I7&#8594;I12, RmN H6&#8594;H11 (flat); Rr upright from J5, J6, J7 across the GND rail to the VREF rail; Rk1&#8211;Rk3 in row H.</span></li>
+<li><span class="txt"><b>Optocouplers</b> &#8212; OK1&#8211;OK3 straddling the channel, <b>pin-1 dot top right</b> (in row F, on the right of each: F20, F23, F26). Rk1&#8211;Rk3 stand on end.</span></li>
+<li><span class="txt"><b>ADS1115</b> &#8212; Check the chip marking first: <b>BOGI</b> is an ADS1115, BRPI an ADS1015 (reject). Solder the straight 10-pin header to the board (short pins into the board), then stand it upright in D3&#8211;D12, chip side toward row A, VDD at D3. Then jumpers 10&#8211;13: E9&#8594;F7 (A0, Z), E10&#8594;G6 (A1, N), E11&#8594;H5 (A2, E), E12&#8594;I4 (A3, VREF), insulated wire across the channel.</span></li>
+<li><span class="txt"><b>12 V island</b> &#8212; D1 C13&#8594;C17, band toward 17; jumper B14&#8594;B16. <b>Nothing here touches a rail.</b></span></li>
+<li class="gate"><span class="txt"><span class="badge">check</span><b>Check before the sensor</b> &#8212; Meter on <b>DC V, 20 V</b>. Adapter on A13/A14, Pi off: A17 reads ~11.6&ndash;12.3 V against A16 (12 V less the Schottky drop; unloaded adapters read high); Pi on, VREF wire in: <code>i2cdetect -y 1</code> shows 0x48; with the mass inputs open, cols 7, 6, 5 (A0, A1, A2) read the same as VREF (~2.46 V; no current in Rm). Optocouplers on <b>&#937;, 2k</b>, red probe on the collector: A20 to A19 reads open, then drops to a few hundred &#937; while GPIO16 is driven high. Repeat A23 to A19 with GPIO20 and A26 to A19 with GPIO21.</span></li></ol></div>
+    <div class="stage"><h3><span class="sn">Stage 3</span>Box</h3><ol class="astep"><li class="gate"><span class="txt"><span class="badge">check</span><b>Fit test</b> &#8212; Print <code>enclosure/fit_test.stl</code> (outer face down, no supports): a keystone jack must click in from behind, a DC jack and a button must go through.</span></li>
+<li><span class="txt"><b>Print the box</b> &#8212; Base upright, open side up, no supports; lid flat face down. Walls 2.5 mm, honeycomb floor and lid.</span></li>
+<li><span class="txt"><b>Front wall</b> &#8212; Left to right: VIN jack (12 V adapter in, AUX A13/A14), AUX keystone (CTL), ADC keystone (SIG), VOUT jack (sensor power lead, AUX A17/A16), and the three buttons above. Keystones go in from inside, latch up. Label all four.</span></li>
+<li><span class="txt"><b>Board stack</b> &#8212; Four standoffs stand on the floor pads, studs down through the floor, nuts from below in the 10 mm pockets. The AUX board screws to them, the ADC board above it.</span></li>
+<li><span class="txt"><b>Pi on the side wall</b> &#8212; Four standoffs through the right wall from outside, nuts inside. Pi component side out, GPIO header at the top; its wires go over the top edge into the slot in the wall.</span></li>
+<li><span class="txt"><b>Lid</b> &#8212; Snaps on one way round, with its lip gap over the Pi slot. Six bumps click into the walls.</span></li></ol></div>
+    <div class="stage"><h3><span class="sn">Stage 4</span>Sensor</h3><ol class="astep"><li class="stop"><span class="txt"><span class="badge s">stop</span><b>Harness: buzz it out twice</b> &#8212; Every conductor from its Dupont socket to its board hole, against the cable table, with the patch cables plugged into their jacks. <b>The power lead gets checked alone</b>: red on pin c, black on pin b. A wrong c/b pair is the one mistake that can hurt the sensor.</span></li>
+<li><span class="txt"><b>Sensor locked, then connect</b> &#8212; Plug in with the adapter unplugged. Adapter in: the mass positions read &#177;8 V on the AUX channels.</span></li>
+<li class="gate"><span class="txt"><span class="badge">check</span><b>Optocoupler drive, before any unlock</b> &#8212; Sensor powered and <b>locked</b>. Meter on <b>DC V, 20 V</b>, black on A19 (Y): A20, A23, A26 idle at ~5 V. Test with <b>LOCK</b> only, since locking an already-locked sensor changes nothing: drive GPIO21 high for 1 s; A26 must fall below ~0.8 V. If it only sags, the LED current is too low for the sensor&rsquo;s pull-up: parallel a second 1 k across each of Rk1&#8211;Rk3 (4 mA). Do not pulse CENTRE or UNLOCK here; the other two optocouplers are the same part and resistor.</span></li>
+<li><span class="txt"><b>Unlock on its final pad</b> &#8212; Level it with the feet and bubble, N mark to north. UNLOCK ~7 s from the button or <code>cmgctl.py unlock</code>: the motors run for a few minutes and the masses usually centre themselves (within &#177;2 V).</span></li>
+<li><span class="txt"><b>Centre if needed</b> &#8212; After ~4 hours of settling, any mass beyond &#177;2 V: CENTRE ~7 s (<code>cmgctl.py centre</code>), then wait two minutes before reading again.</span></li>
+<li class="stop"><span class="txt"><span class="badge s">stop</span><b>Lock before moving</b> &#8212; <code>cmgctl.py lock</code>, wait for quiet and all three masses at ~&#177;8 V, then remove power. Never move it unlocked.</span></li></ol></div>
+  </section>
+
+  <section id="pi">
+    <h2>Raspberry Pi</h2>
+    <p class="lede">Everything is 3.3 V logic; the modules have no level shifters. SCLK, MOSI and MISO each run as one plain lead from the Pi to module Z; the board&rsquo;s bus wires carry them to N and E. Nineteen Pi pins in all: 9 for the three converters, 2 for I&#178;C, 3 for lock / unlock / centre, and power.</p>
+    <div class="tablewrap"><table class="pins">
+      <thead><tr><th>Pi pin</th><th>Signal</th><th>Board hole</th><th>Note</th></tr></thead>
+      <tbody><tr><td class="ref">1</td><td class="bits">3V3</td><td class="val">ADC 3V3 rail, col 30</td><td class="note">3.3 V, never 5 V, to the modules. Pi pin 17 feeds the AUX board</td></tr>
+<tr><td class="ref">2</td><td class="bits">5V</td><td class="val">ADC A29</td><td class="note">Feeds the reference through Rfd1&#8741;Rfd2</td></tr>
+<tr><td class="ref">6</td><td class="bits">GND</td><td class="val">ADC GND top, col 28</td><td class="note">Pi pin 9 goes to the AUX board&rsquo;s GND</td></tr>
+<tr><td class="ref">23</td><td class="bits">GPIO11 SCLK</td><td class="val">J5</td><td class="note">One plain lead. Bus wires B1/B2 carry it on to N and E</td></tr>
+<tr><td class="ref">19</td><td class="bits">GPIO10 MOSI</td><td class="val">J6</td><td class="note">One plain lead; bus wires B3/B4</td></tr>
+<tr><td class="ref">21</td><td class="bits">GPIO9 MISO</td><td class="val">J7</td><td class="note">One plain lead; bus wires B5/B6. DOUT is high-impedance while CS is high, so sharing is safe</td></tr>
+<tr><td class="ref">18</td><td class="bits">GPIO24</td><td class="val">J4</td><td class="note">CS Z (as on the geophone station). None of the three is a hardware CE pin: open the bus with <code>no_cs</code> and drive them by hand</td></tr>
+<tr><td class="ref">22</td><td class="bits">GPIO25</td><td class="val">J13</td><td class="note">CS N</td></tr>
+<tr><td class="ref">29</td><td class="bits">GPIO5</td><td class="val">J22</td><td class="note">CS E</td></tr>
+<tr><td class="ref">13</td><td class="bits">GPIO27</td><td class="val">J8</td><td class="note">DRDY Z</td></tr>
+<tr><td class="ref">15</td><td class="bits">GPIO22</td><td class="val">J17</td><td class="note">DRDY N</td></tr>
+<tr><td class="ref">31</td><td class="bits">GPIO6</td><td class="val">J26</td><td class="note">DRDY E</td></tr>
+<tr><td class="ref">3</td><td class="bits">GPIO2 SDA</td><td class="val">AUX A6</td><td class="note">I&#178;C1; the ADS1115 board has its own 10 k pull-ups</td></tr>
+<tr><td class="ref">5</td><td class="bits">GPIO3 SCL</td><td class="val">AUX A5</td><td class="note"></td></tr>
+<tr><td class="ref">17</td><td class="bits">3V3</td><td class="val">AUX A3</td><td class="note">ADS1115 VDD</td></tr>
+<tr><td class="ref">9</td><td class="bits">GND</td><td class="val">AUX GND top, col 29</td><td class="note"></td></tr>
+<tr><td class="ref">36</td><td class="bits">GPIO16</td><td class="val">AUX J21</td><td class="note">CENTRE: high for 7 s. Low, the power-on default, leaves the line alone</td></tr>
+<tr><td class="ref">38</td><td class="bits">GPIO20</td><td class="val">AUX J24</td><td class="note">UNLOCK</td></tr>
+<tr><td class="ref">40</td><td class="bits">GPIO21</td><td class="val">AUX J27</td><td class="note">LOCK</td></tr></tbody>
+    </table></div>
+    <h3 style="font-family:var(--f-display);font-size:15px;margin:22px 0 8px">ADS1220 registers, all three modules</h3>
+    <div class="tablewrap"><table class="regs">
+      <thead><tr><th>Reg</th><th>Write</th><th>Fields</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr class="keypart"><td class="ref">0x00</td><td class="hex">0x01</td><td class="bits">MUX 0000 &#183; GAIN 000 &#183; PGA_BYPASS 1</td><td class="note">AIN0 against AIN1, <b>gain 1</b>, PGA out</td></tr>
+        <tr><td class="ref">0x01</td><td class="hex">0x50</td><td class="bits">DR 010 &#183; MODE 10 &#183; CM 0</td><td class="note">Turbo, single-shot: the Pi starts all three together at 150 SPS. Normal mode at a similar rate measured ~7&#215; noisier</td></tr>
+        <tr><td class="ref">0x02</td><td class="hex">0x00</td><td class="bits">VREF 00</td><td class="note">Internal 2.048 V reference</td></tr>
+        <tr><td class="ref">0x03</td><td class="hex">0x00</td><td class="bits">&#8212;</td><td class="note">DRDY on its own pin</td></tr>
+      </tbody>
+    </table></div>
+    <p class="tfoot-note">Write all four with <code>0x43 0x01 0x50 0x00 0x00</code> and read back with <code>0x23</code>. <code>pi/cmgcapture.py</code> sends START to all three on each tick, reads them once all three DRDY lines are low, and resamples to 100 SPS; no SPI traffic overlaps a conversion. On a Pi 5, set <code>pcie_aspm=off</code> (see <code>pi/README.md</code>).</p>
+  </section>
+
+  <section id="notes">
+    <h2>Notes</h2>
+    <div class="notes"><div class="note-row critical"><span class="idx">1</span><div><h3>No series resistance in the sensor&rsquo;s 12 V</h3><p>The 3T runs off an internal switching supply, which draws more current as its voltage sags. A 10 &#937; sense resistor in series runs away (180 mA and climbing). Only the diode sits in the line, and the adapter&rsquo;s 1 A limit is the protection.</p></div></div>
+<div class="note-row critical"><span class="idx">2</span><div><h3>The 12 V return goes to pin b and nowhere else</h3><p>The adapter&minus; (A14) connects only to sensor pin b (A16). The sensor ties b to its signal ground internally, and signal ground N lands once, on the ADC board. So the 400&ndash;600 mA motor pulses never flow through either board&rsquo;s ground.</p></div></div>
+<div class="note-row"><span class="idx">3</span><div><h3>Optocouplers keep the Pi off the sensor&rsquo;s control lines</h3><p>The Pi only lights an LED; the LTV-817&rsquo;s transistor does the pulling, from the line to Y. The GPIOs default low at power-on, so a boot or a crash cannot lock or unlock the masses.</p></div></div>
+<div class="note-row"><span class="idx">4</span><div><h3>Why the AVDD socket is left out</h3><p>Three modules take 24 of 30 columns, and each needs two strips of its own for the sensor leads. Leaving AVDD unsocketed frees its strip for the minus lead, and the minus-leg resistor lies flat over the four unused module strips. AVDD is still powered through the module&rsquo;s own AVDD&ndash;DVDD tie, so meter that before building.</p></div></div>
+<div class="note-row"><span class="idx">5</span><div><h3>No Ccm capacitors</h3><p>No 10 nF from each input to ground: the layout has no clean spot for six, and the 3T&rsquo;s outputs are low-impedance, band-limited, and arrive over shielded cable. Cdif across each pair does the filtering the switched-capacitor input needs, since the PGA is bypassed.</p></div></div>
+<div class="note-row"><span class="idx">6</span><div><h3>PGA bypassed, gain 1</h3><p>Both legs swing, so the common mode moves with the signal, and the PGA&rsquo;s input limits would clip early. With the PGA out, only the pin limits apply: the inputs stay inside 0&ndash;3.3 V until ~6.7 mm/s, beyond the &#177;4.1 mm/s full scale.</p></div></div>
+<div class="note-row"><span class="idx">7</span><div><h3>Matched pairs are what reject the reference</h3><p>VREF noise reaches both legs of a channel equally and cancels in the differential reading, to the extent the pairs match. That is what the 0.1% parts buy; the 1% mass-position dividers don&rsquo;t need it.</p></div></div>
+<div class="note-row"><span class="idx">8</span><div><h3>Boards in a closed box, Pi outside it</h3><p>Below ~0.05 Hz, the limit is the boards&rsquo; thermal drift, not the converter. The printed box keeps air movement off them, and the Pi, the main heat source, sits outside on the wall.</p></div></div>
+<div class="note-row critical"><span class="idx">9</span><div><h3>Pi 5: PCIe ASPM off</h3><p>With ASPM on, the PCIe link to the RP1 (the chip behind the GPIO and SPI pins) drops into L1 between reads and puts an ~80 ms disturbance on all three channels every 2.77 s. Add <code>pcie_aspm=off</code> to <code>/boot/firmware/cmdline.txt</code>.</p></div></div></div>
+  </section>
+
+</div>
+</body>
+</html>

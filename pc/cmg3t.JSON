@@ -1,0 +1,53 @@
+{
+    "network": "XX",
+    "station": "QUAK",
+    "channelPrefix": "HH",
+
+    "serverIP": "10.0.0.102",
+    "stationLat": 0.0,
+    "stationLon": 0.0,
+    "zPort": 1244,
+    "nPort": 1245,
+    "ePort": 1246,
+    "serverPort": 1244,
+
+    "plotSeconds": 900,
+    "cutLow": 0.5,
+    "cutHigh": 2.0,
+    "filterOrder": 4,
+    "specComponents": "Z",
+    "specWindow": 256,
+    "specHopSec": 0.5,
+    "specSmoothSec": 1,
+    "specMinHz": 0,
+    "specHighpassHz": 0.2,
+    "specMaxHz": 45,
+    "specPad": 4,
+    "specScale": "root",
+    "specRangePct": [0, 100],
+    "midPeriod": {
+        "cutLow": 0.02,
+        "cutHigh": 1.0,
+        "decimateTo": 5.0,
+        "specWindow": 320,
+        "specMaxHz": 1.0
+    },
+    "longPeriod": {
+        "plotSeconds": 3600,
+        "cutLow": 0.01,
+        "cutHigh": 0.1,
+        "decimateTo": 2.0,
+        "specWindow": 128,
+        "specHopSec": 8,
+        "specMaxHz": 0.5,
+        "specHighpassHz": 0
+    },
+    "STA": 2.0,
+    "LTA": 30.0,
+    "staltaTrigger": 4.0,
+    "plotLineW": 0.4,
+    "figW": 15,
+    "figH": 10,
+    "titleFontSize": 9,
+    "refreshMs": 2000
+}

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+data/
+*.mseed
+*.log
+*.err
+pc/cmg3t/events/

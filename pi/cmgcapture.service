@@ -1,0 +1,25 @@
+
+# systemd unit for the CMG-3T capture daemon. Install with:
+#   sudo cp cmgcapture.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now cmgcapture
+#   journalctl -fu cmgcapture
+# Needs the rest of this folder next to cmgcapture.py, and the venv with obspy.
+
+[Unit]
+Description=CMG-3T capture: 3 x ADS1220 + mass positions -> disk + TCP streams
+After=network-online.target time-sync.target
+Wants=network-online.target time-sync.target
+
+[Service]
+User=david
+WorkingDirectory=/home/david/cmg3t
+ExecStart=/home/david/cmg3t/venv/bin/python /home/david/cmg3t/cmgcapture.py
+Restart=always
+RestartSec=5
+Nice=-10
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
