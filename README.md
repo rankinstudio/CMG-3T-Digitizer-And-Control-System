@@ -83,6 +83,28 @@ USArray, [when and where](http://www.usarray.org/public/about/when) and
 history from PASSCAL station metadata (EarthScope FDSN web services) and its
 TOK4 waveforms.
 
+## Cost
+
+Approximate, in US dollars, before shipping and tax. Part numbers are in the
+build document's parts list.
+
+| Item | Where | Cost |
+|---|---|---|
+| Güralp CMG-3T 120 s, used ex-pool unit (no cable) | eBay / surplus | $160 |
+| Raspberry Pi 5 (4 GB), 27 W USB-C supply, active cooler, 32 GB microSD, right-angle USB-C adapter | any Pi reseller | $97 |
+| ADS1220 modules ×3 (plus a spare), ADS1115 breakout | AliExpress / Amazon | $33 |
+| ElectroCookie solderable breadboards (pack of 3) | Amazon | $10 |
+| Board parts: 0.1 % divider resistors, film and ceramic caps, LM4040 reference, sockets, optocouplers, Schottky, 1 % resistors | DigiKey | $28 |
+| Cat6 keystone jacks ×2, stranded patch cables ×2, two-core power lead, Dupont leads | Amazon | $30 |
+| Panel DC jacks ×2 and a plug, panel buttons ×3, standoffs and nuts | Amazon | $20 |
+| 12 V 1 A DC adapter | Amazon | $8 |
+| Filament for the box (~130 g) | — | $3 |
+| **Total** | | **≈ $390** |
+
+Without the sensor it is about $230; with a Pi already on hand, about $130.
+The sensor dominates, and used 3T prices vary: check a unit's history before
+buying (its serial number in public station metadata).
+
 ## Skills required
 
 None of it is advanced, but all of it gets used:
