@@ -157,42 +157,52 @@ the quake shows above the noise on Z. Set `stationLat` / `stationLon` in
 | ![The sensor](images/sensor.jpg) | |
 | The CMG-3T: Dupont sockets on its pins, the two Ethernet cables and the power lead | |
 
-## Example: M6.3 Vanuatu, 2026-10-08
+## Example: M7.7 Panama, 2026-10-09
 
-USGS us6000u0xi, 102 km NE of Norsup, Vanuatu, 09:00:07 UTC, 10 km deep.
-10,107 km from the station (90.9°), arriving from azimuth 252° (WSW).
-Predicted arrivals: P 09:13:11, S 09:23:43, Rayleigh waves from about 09:48 UTC.
+USGS us6000u18k, 12 km WSW of Pitaloza Arriba, Panama, 17:56:06 UTC, 13 km deep.
+4,136 km from the station (37.2°), arriving from azimuth 125° (SE).
+Predicted arrivals: P 18:03:16, S 18:09:04, Rayleigh waves from about 18:13 UTC.
+The largest ground velocity was 0.49 mm/s, well inside the 4.1 mm/s full scale,
+so nothing clipped. Against the 15 min before P, the quake is 29 times louder in
+the short-period band and over 1,000 times louder in the 1–50 s and 10–100 s bands.
 
-**Alert, short period view (0.5–2 Hz).** The STA/LTA trigger fired at
-09:13:45 UTC and the PC sent the Telegram message; this screenshot was saved
-10.5 min later. The blue line marks the trigger and the red line marks the
-reset. The time axis is local time (UTC−7), so 02:13 is 09:13 UTC. The P wave
-is the burst on Z just before the blue line, about 1.2 µm/s peak, and it also
-shows on N and E. In the spectrogram the quake is the band under 2 Hz from
-02:13 onward. The vertical streaks at 10–40 Hz and the faint horizontal lines
-come from local noise in and around the house, not from the quake.
+The plots are made by `pc/cmgwaves.py` from the saved data. N and E are rotated
+to **R** (radial: along the path from the quake) and **T** (transverse: across
+it), so each wave type lands on its own component. Times are minutes after the
+origin. Thin white lines are the predicted body waves: **P** and **S** take the
+direct path through the mantle; **PP**, **SS** and **SSS** bounced once or twice
+off the surface on the way, so they arrive later. The coloured spans are the
+surface waves, placed by their travel speeds over the 4,136 km path; dotted
+blue lines are the P waves of aftershocks (M5.0–5.8) arriving during the window.
 
-![Alert plot, short period view](images/vanuatu-sp.jpg)
+**10–100 s view (0.01–0.1 Hz).** P (7 min) is small at these periods; S
+(13 min) is clearer, mainly on R. **Love waves** (purple) start at about 15 min
+on T only: they move the ground side to side, which Z never sees. **Rayleigh
+waves** follow on Z and R, which they move together in a rolling motion: first a
+few long-period swings (yellow), then the dense, regular train (red). After
+about 28 min the **coda** (grey) is surface-wave energy scattered along the way,
+dying out over the next half hour. The first aftershock's P lands at 33 min.
 
-**Alert, 1–50 s view (0.02–1 Hz), saved 42 min after the trigger.** This is
-the hour around the P wave. P is the sharp onset at 02:13 on Z, a full-height
-stripe in the spectrogram. S arrives at 02:24 (09:24 UTC) and is strongest on
-the horizontals, as expected for shear waves. The surface waves start around
-02:41: a bright patch at the bottom of the spectrogram (periods of 20–50 s),
-growing toward 02:55. The steady glow at 0.1–0.25 Hz the whole hour is the
-ocean microseism, always present.
+![Labelled traces, 10-100 s view](images/panama-lp.png)
 
-![Alert plot, 1-50 s view](images/vanuatu-mp.jpg)
+**Spectrogram of the same hour,** Z above and T below; brighter means more power
+at that period. This shows *why* the waves change shape: surface waves are
+dispersive. Long periods reach deeper into the faster mantle and arrive first;
+shorter periods travel in the slower crust and arrive later. The bright streak
+on T (Love) starts near 60 s at about 17 min and slides down to about 20 s by
+30 min. The same falling curve appears on Z (Rayleigh) a couple of minutes later,
+because Rayleigh waves travel a little slower than Love waves.
 
-**Event plot, 10–100 s view (0.01–0.1 Hz),** made by `cmgevent.py` from the
-saved data. The solid lines are the predicted P and S times; the dashed lines
-bracket the Rayleigh waves (group speeds 3.5 and 2.5 km/s). In this band the
-quake is 8 times louder than the 15 min before P (SNR 8.1). The large
-long-period swings mostly on N at 33–38 min (09:41–09:46 UTC) are Love waves.
-These move the ground side to side, across the path. With the quake to the
-WSW, that motion lies mostly along north–south. From 45 min on, the Rayleigh
-waves follow on Z and E. They move the ground up-down and along the path,
-which here is close to east–west. The sensor sits north-aligned, and these
-two wave types land on the components that the arrival direction predicts.
+![Labelled spectrogram, 10-100 s view](images/panama-lp-spec.png)
 
-![Event plot, 10-100 s view](images/vanuatu-lp.png)
+**1–50 s view (0.02–1 Hz),** the first 35 min. The body waves are sharper here:
+P and PP at 7–9 min on Z and R, S at 13 min. The surface waves are the same
+sequence as above, now with their shorter periods included.
+
+![Labelled traces, 1-50 s view](images/panama-mp.png)
+
+**Spectrogram, 1–50 s view.** P and PP put their energy at 2–8 s periods; the
+surface waves take over at 15–40 s from about 16 min and dominate the rest of
+the window.
+
+![Labelled spectrogram, 1-50 s view](images/panama-mp-spec.png)

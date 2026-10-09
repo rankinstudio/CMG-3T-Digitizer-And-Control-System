@@ -65,9 +65,10 @@ def handle(f, done, lock, queued):
     wait = (due - datetime.now(timezone.utc)).total_seconds()
     if wait > 0:
         time.sleep(wait)
-    r = subprocess.run([sys.executable, '-W', 'ignore', os.path.join(HERE, 'cmgevent.py'), f['id']],
-                       capture_output=True, text=True, cwd=HERE)
-    for line in (r.stdout + r.stderr).strip().splitlines():
+    with RUN:
+        r = subprocess.run([sys.executable, '-W', 'ignore', os.path.join(HERE, 'cmgevent.py'), f['id']],
+                           capture_output=True, text=True, cwd=HERE)
+    for line in ((r.stdout or '') + (r.stderr or '')).strip().splitlines():
         if not line.startswith('wrote '):
             say("  " + line)
     with lock:

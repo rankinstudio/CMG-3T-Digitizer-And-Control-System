@@ -50,6 +50,11 @@ to the Pi (`serverIP` in `cmg3t.JSON`, user `david` in `cmgevent.py`).
   where that band's waves should arrive, than 2× anything in the 15 min before
   P. A quake whose window holds the waves of one that should be louder at the
   station is reported as masked. `--force` saves the plots regardless.
+- `cmgwaves.py <usgs id>`: dark plots of one quake in the 1–50 s and 10–100 s
+  bands, Z with N/E rotated to radial and transverse, every wave type labelled
+  (P, PP, S, SS, SSS, Love, Rayleigh, coda, other quakes' P), plus a labelled
+  Z / transverse spectrogram per band, into the same event folder. Uses the data
+  `cmgevent.py` already pulled; `--pull` fetches it from the Pi first.
 - `watch_cmg.py`: polls the USGS catalogue every 5 min for M > 4 and runs
   `cmgevent.py` for each once its waves have reached the Pi (up to ~2 h).
   Log to a file and leave it running, e.g. on Windows:
