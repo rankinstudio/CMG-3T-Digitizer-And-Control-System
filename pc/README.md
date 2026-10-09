@@ -1,6 +1,6 @@
 # PC software
 
-Python 3 with `numpy`, `scipy`, `matplotlib` and `obspy`; `ssh`/`scp` with a key
+Python 3 with `numpy`, `scipy`, `matplotlib`, `obspy` and `python-telegram-bot`; `ssh`/`scp` with a key
 to the Pi (`serverIP` in `cmg3t.JSON`, user `david` in `cmgevent.py`).
 
 - `cmgclient.py` (settings `cmg3t.JSON`): live Z, N, E traces with spectrograms,
@@ -29,6 +29,21 @@ to the Pi (`serverIP` in `cmg3t.JSON`, user `david` in `cmgevent.py`).
   Each view's band, window length, decimation and spectrogram settings are in
   `cmg3t.JSON`: the top level is the short-period view, `midPeriod` and
   `longPeriod` override it for the other two.
+
+  Earthquake alert (`cmgalert.py`, `alert` and `telegram` in `cmg3t.JSON`, same
+  names and meanings as rsudp's): a recursive STA/LTA on Z (15 s / 140 s,
+  0.01–2 Hz after rsudp's 0.1–0.6 Hz velocity pre-filter) triggers once it has
+  stayed above `threshold` (2.4) for `duration` (32 s), and resets below `reset`
+  (1.6). As in rsudp the ratio starts from zero at the start of its 140 s
+  window, so steady noise reads ~1.6, not 1. Each trigger posts a Telegram
+  message, draws a blue start line (red at reset) on the traces, and saves the
+  views in `screenshot_views` (`SP`, `MP`, `LP`; default short period and
+  1–50 s) to `cmg3t/alerts/`, whichever view is on screen, sending each PNG to
+  the same chat. Each is saved once the event is `save_pct` (0.7) across that
+  view's window: short period 10.5 min after the trigger, 1–50 s 42 min after,
+  late enough for a distant quake's surface waves. It runs in
+  every view; the title shows the current ratio, the timer while it runs, and
+  the trigger count. Needs `pip install python-telegram-bot`.
 - `cmgevent.py <usgs id>`: pulls the hours around a catalogued quake from the
   Pi, band-passes Z/N/E in those three bands, and saves the plots under
   `cmg3t/events/<origin>_M<mag>_<place>/` if the quake registered: Z louder,

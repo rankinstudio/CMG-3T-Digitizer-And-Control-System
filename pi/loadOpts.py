@@ -45,6 +45,7 @@ DEFAULTS = {
     "plotLineW": 0.4,
     "figW": 11.8,
     "figH": 6.8,
+    "fullScreen": False,        # start the plot window full screen (f toggles it)
     "titleFontSize": 9,
     "refreshMs": 1500,
 }

@@ -42,12 +42,37 @@
         "specMaxHz": 0.5,
         "specHighpassHz": 0
     },
-    "STA": 2.0,
-    "LTA": 30.0,
-    "staltaTrigger": 4.0,
+    "alert": {
+        "enabled": true,
+        "channel": "Z",
+        "sta": 15,
+        "lta": 140,
+        "duration": 32.0,
+        "threshold": 2.4,
+        "reset": 1.6,
+        "highpass": 0.01,
+        "lowpass": 2,
+        "deconvolve": true,
+        "on_plot": true,
+        "on_plot_end_line_color": "#D72638",
+        "on_plot_start_line_color": "#4C8BF5",
+        "eq_screenshots": true,
+        "save_pct": 0.7,
+        "screenshot_views": ["SP", "MP"],
+        "output_dir": "cmg3t/alerts"
+    },
+    "telegram": {
+        "enabled": false,
+        "send_images": true,
+        "token": "",
+        "chat_id": "",
+        "extra_text": "Earthquake Detected",
+        "upload_timeout": 30
+    },
     "plotLineW": 0.4,
     "figW": 15,
     "figH": 10,
+    "fullScreen": true,
     "titleFontSize": 9,
     "refreshMs": 2000
 }

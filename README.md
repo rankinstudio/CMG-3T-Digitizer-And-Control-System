@@ -156,3 +156,43 @@ the quake shows above the noise on Z. Set `stationLat` / `stationLon` in
 | Inside: ADC board above the AUX board; keystones and DC jacks on the front wall | The Pi 5 on the side wall, GPIO wires over the top |
 | ![The sensor](images/sensor.jpg) | |
 | The CMG-3T: Dupont sockets on its pins, the two Ethernet cables and the power lead | |
+
+## Example: M6.3 Vanuatu, 2026-10-08
+
+USGS us6000u0xi, 102 km NE of Norsup, Vanuatu, 09:00:07 UTC, 10 km deep.
+10,107 km from the station (90.9°), arriving from azimuth 252° (WSW).
+Predicted arrivals: P 09:13:11, S 09:23:43, Rayleigh waves from about 09:48 UTC.
+
+**Alert, short period view (0.5–2 Hz).** The STA/LTA trigger fired at
+09:13:45 UTC and the PC sent the Telegram message; this screenshot was saved
+10.5 min later. The blue line marks the trigger and the red line marks the
+reset. The time axis is local time (UTC−7), so 02:13 is 09:13 UTC. The P wave
+is the burst on Z just before the blue line, about 1.2 µm/s peak, and it also
+shows on N and E. In the spectrogram the quake is the band under 2 Hz from
+02:13 onward. The vertical streaks at 10–40 Hz and the faint horizontal lines
+come from local noise in and around the house, not from the quake.
+
+![Alert plot, short period view](images/vanuatu-sp.jpg)
+
+**Alert, 1–50 s view (0.02–1 Hz), saved 42 min after the trigger.** This is
+the hour around the P wave. P is the sharp onset at 02:13 on Z, a full-height
+stripe in the spectrogram. S arrives at 02:24 (09:24 UTC) and is strongest on
+the horizontals, as expected for shear waves. The surface waves start around
+02:41: a bright patch at the bottom of the spectrogram (periods of 20–50 s),
+growing toward 02:55. The steady glow at 0.1–0.25 Hz the whole hour is the
+ocean microseism, always present.
+
+![Alert plot, 1-50 s view](images/vanuatu-mp.jpg)
+
+**Event plot, 10–100 s view (0.01–0.1 Hz),** made by `cmgevent.py` from the
+saved data. The solid lines are the predicted P and S times; the dashed lines
+bracket the Rayleigh waves (group speeds 3.5 and 2.5 km/s). In this band the
+quake is 8 times louder than the 15 min before P (SNR 8.1). The large
+long-period swings mostly on N at 33–38 min (09:41–09:46 UTC) are Love waves.
+These move the ground side to side, across the path. With the quake to the
+WSW, that motion lies mostly along north–south. From 45 min on, the Rayleigh
+waves follow on Z and E. They move the ground up-down and along the path,
+which here is close to east–west. The sensor sits north-aligned, and these
+two wave types land on the components that the arrival direction predicts.
+
+![Event plot, 10-100 s view](images/vanuatu-lp.png)

@@ -9,7 +9,12 @@
     python cmgclient.py --lp            # start in the 10-100 s view
 
 Keys in the plot window: l cycles the views short period -> 1-50 s -> 10-100 s,
-c clears.
+c clears, f toggles full screen ("fullScreen": true in cmg3t.JSON starts that way).
+
+Earthquake alert (cmgalert.py, settings "alert" and "telegram" in cmg3t.JSON):
+rsudp's STA/LTA trigger with a timer on Z, a Telegram message per trigger, start
+and end lines on the traces, and PNGs sent to the same Telegram chat: the short-period
+view 10.5 min later, the 1-50 s view 42 min later. The STA/LTA and the trigger count are in the title.
 
 Long-period view: the last hour, each trace decimated to 2 SPS and band-passed
 0.01-0.1 Hz (10-100 s: surface waves of distant quakes, the ~6 s microseism
@@ -33,7 +38,7 @@ import threading
 import time
 import bisect
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 import matplotlib
@@ -45,6 +50,7 @@ from scipy.ndimage import uniform_filter1d
 
 from loadOpts import load_config, ROOT
 from geostream import connect, read_block
+from cmgalert import Alert, telegrammers
 
 opts = load_config(os.path.join(ROOT, 'cmg3t.JSON'))
 FRESH = '--fresh' in sys.argv
@@ -137,6 +143,27 @@ class Receiver(threading.Thread):
         x = np.concatenate([b[3] for b in blocks]).astype(np.float64)
         return t, x, fs
 
+    def tail(self, sec):
+        """The newest sec seconds (+1 sample) if they are gap-free: (time of the last sample, x, fs), else None."""
+        with self.lock:
+            if not self.blocks:
+                return None
+            fs = self.blocks[-1][1]
+            n = int(round(sec * fs)) + 1
+            parts, have, nxt = [], 0, None
+            for t0, bfs, seg, data in reversed(self.blocks):
+                if nxt is not None and abs(t0 + data.size / bfs - nxt) > 0.5 / fs:
+                    return None
+                parts.append(data)
+                have += data.size
+                nxt = t0
+                if have >= n:
+                    break
+            if have < n:
+                return None
+            t_end = self.blocks[-1][0] + (self.blocks[-1][3].size - 1) / fs
+        return t_end, np.concatenate(parts[::-1])[-n:].astype(np.float64), fs
+
 
 # ------------------------------------------------------------------- display --
 def bandpass(x, fs):
@@ -187,15 +214,6 @@ def runs_of(t, x, fs):
     return list(zip(np.split(t, cut), np.split(x, cut)))
 
 
-def sta_lta(y, fs):
-    ns, nl = int(opts['STA'] * fs), int(opts['LTA'] * fs)
-    if y.size < nl:
-        return None
-    env = np.abs(y)
-    lta = env[-nl:].mean()
-    return env[-ns:].mean() / lta if lta > 0 else None
-
-
 plt.style.use('dark_background')
 matplotlib.rcParams['toolbar'] = 'None'
 # free this program's keys from matplotlib's defaults (l = log y-axis, c = back)
@@ -213,11 +231,21 @@ axes = list(np.atleast_1d(axes))
 ax_tr = [ax for ax, (kind, _) in zip(axes, rows) if kind == 'tr']
 ax_sp = {c: ax for ax, (kind, c) in zip(axes, rows) if kind == 'sp'}
 fig.canvas.manager.set_window_title("cmgclient  %s:%s" % (HOST, '/'.join(map(str, PORTS))))
+if opts['fullScreen']:
+    fig.canvas.manager.full_screen_toggle()
 rx = [Receiver(c, p) for c, p in zip(COMPS, PORTS)]
 for r in rx:
     r.start()
+ALERT_CFG = opts.get('alert', {})
+TG_CFG = opts.get('telegram', {})
+STATION = '%s.%s' % (opts['network'], opts['station'])
+telegram = telegrammers(TG_CFG, STATION) if TG_CFG.get('enabled') else []
+alert = Alert(ALERT_CFG, rx[COMPS.index(ALERT_CFG.get('channel', 'Z')[-1])], telegram)     if ALERT_CFG.get('enabled', True) else None
+for th in telegram + [alert]:
+    if th:
+        th.start()
 LABEL_OFFSET_IN, LABEL_MARGIN_IN = 0.62, 0.85   # y-label distance from its axis, figure left margin (inches)
-state = {'laid_out': False, 'last_trigger': 0.0, 'view': 'LP' if '--lp' in sys.argv else 'MP' if '--mp' in sys.argv else 'SP'}
+state = {'laid_out': False, 'view': 'LP' if '--lp' in sys.argv else 'MP' if '--mp' in sys.argv else 'SP'}
 opts.update(VIEWS[state['view']])
 
 
@@ -238,6 +266,26 @@ fig.canvas.mpl_connect('key_press_event', on_key)
 def animate(_):
     t_frame = time.time()
     _animate()
+    # rsudp's event screenshots, one per view in the alert's "screenshot_views", each once the
+    # trigger is save_pct across that view's window; then back to the view on screen
+    due = alert.screenshots_due({v: VIEWS[v]['plotSeconds'] for v in VIEWS}) if alert else []
+    if due:
+        shown = state['view']
+        for t_ev, v in due:
+            state['view'] = v
+            opts.update(VIEWS[v])
+            _animate()
+            path = alert.screenshot_path(opts['station'], t_ev, v)
+            ax_tr[0].set_title("%s  Detected Event - %s UTC   %s" % (
+                STATION, datetime.fromtimestamp(t_ev, timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')[:22],
+                VIEW_NAME[v]), fontsize=opts['titleFontSize'] + 3, color='white')
+            fig.savefig(path, facecolor=fig.get_facecolor(), edgecolor='none')
+            _log("saved %s" % path)
+            for tgm in telegram:
+                tgm.image(path)
+        state['view'] = shown
+        opts.update(VIEWS[shown])
+        _animate()
     took = time.time() - t_frame
     if took > opts['refreshMs'] / 1000.0:
         print("slow frame: %.2f s against a %d ms refresh" % (took, opts['refreshMs']), flush=True)
@@ -253,7 +301,6 @@ def _animate():
     td = mdates.date2num([datetime.fromtimestamp(v) for v in (t_left, t_right)])
     to_num = lambda tt: td[0] + (tt - t_left) / 86400.0
     n_px = int(fig.get_size_inches()[0] * fig.dpi)
-    ratio = None
     lag = None
     fs_seen = None
 
@@ -289,7 +336,6 @@ def _animate():
             te, ye = envelope(tt, y * 1e-3, 2 * n_px)
             ax.plot(to_num(te), ye, lw=opts['plotLineW'], color=COLORS[comp])
             if comp == 'Z':
-                ratio = sta_lta(y, fs_v) if state['view'] == 'SP' else None
                 lag = time.time() - tt[-1]
             if sp is None:
                 continue
@@ -305,6 +351,12 @@ def _animate():
                               f[0] - df / 2, f[-1] + df / 2))
         if peak:
             ax.set_ylim(-1.1e-3 * peak, 1.1e-3 * peak)
+        if alert and alert.cfg['on_plot']:
+            starts, ends = alert.lines(t_left)
+            for v in starts:
+                ax.axvline(to_num(v), color=alert.cfg['on_plot_start_line_color'], lw=2)
+            for v in ends:
+                ax.axvline(to_num(v), color=alert.cfg['on_plot_end_line_color'], lw=2)
 
     title = "%s.%s  %s  %s  %g–%g Hz   %s SPS   lag %s" % (
         opts['network'], opts['station'], '/'.join(opts['channelPrefix'] + c for c in COMPS),
@@ -316,14 +368,17 @@ def _animate():
     if status != {'connected'}:
         title += "   " + '/'.join("%s %s" % (r.comp, r.status) for r in rx if r.status != 'connected')
     color = 'white'
-    if ratio is not None:
-        title += "   Z STA/LTA %.2f" % ratio
-        if ratio >= opts['staltaTrigger']:
+    if alert:
+        a = alert.cfg
+        title += "   %s STA/LTA %s / %g" % (a['channel'], '%.2f' % alert.ratio if alert.ratio is not None else '--',
+                                          a['threshold'])
+        timer = alert.timer()
+        if alert.exceed:
             color = '#FF5555'
-            if time.time() - state['last_trigger'] > opts['LTA']:
-                state['last_trigger'] = time.time()
-                print("%s  TRIGGER  Z STA/LTA %.2f" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ratio),
-                      flush=True)
+        elif timer is not None:
+            title += " for %.0f/%g s" % (timer, a['duration'])
+            color = '#FFB347'
+        title += "   events %d" % alert.events
     ax_tr[0].set_title(title, fontsize=opts['titleFontSize'], color=color)
 
     for comp, sp in ax_sp.items():
@@ -346,6 +401,7 @@ def _animate():
     fig.subplots_adjust(left=LABEL_MARGIN_IN / w_in)
     for a in axes:
         a.yaxis.set_label_coords(-LABEL_OFFSET_IN / (a.get_position().width * w_in), 0.5)
+
 
 
 ani = FuncAnimation(fig, animate, interval=opts['refreshMs'], cache_frame_data=False)
